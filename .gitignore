@@ -1,0 +1,3 @@
+# what tools/check.mjs --out builds
+_site/
+node_modules/

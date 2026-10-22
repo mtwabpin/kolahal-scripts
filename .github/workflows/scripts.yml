@@ -1,0 +1,54 @@
+name: Scripts
+
+# Every pull request: checks each script (tools/check.mjs). Every push to main: the same, then
+# publishes index.json and the scripts on GitHub Pages, where Kolahal reads them.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scripts-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # luac checks Lua syntax; JavaScript is checked by Node itself.
+      - run: sudo apt-get update -q && sudo apt-get install -y -q lua5.4
+
+      - name: Check every script, and build the site Kolahal reads
+        run: node tools/check.mjs --out _site
+
+      - if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
