@@ -21,6 +21,10 @@ off, then or later.
 - Each script describes itself in its first lines: `@title`, `@desc`, `@author`, `@version`, and
   what it uses and when it runs. [Describing a script](https://mtwabpin.github.io/kolahal/scripting/overview/#describing-a-script)
   lists them all.
+- Scripts named `template-…` are starting points: short, commented scripts that show one way of
+  working each. `template-command` (a command you type), `template-timer` (runs by itself and
+  tells you what changed), `template-api-key` (an API key you set on the phone), `template-event`
+  (runs when something happens on the phone) and `template-js` (the same in JavaScript).
 - `index.json`, published at https://mtwabpin.github.io/kolahal-scripts/index.json, lists every
   script with its checksum. Kolahal reads it, and checks each file against it before installing.
 
