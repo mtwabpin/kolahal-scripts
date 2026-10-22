@@ -89,6 +89,9 @@ function check(dir) {
   const bytes = readFileSync(path);
   const code = bytes.toString('utf8');
 
+  // Kolahal (Android) also breaks lines at \v, \f, U+0085, U+2028 and U+2029: a directive hidden behind
+  // one would be read by the app and missed here, so only \n and \r\n are allowed.
+  if (/[\v\f\u0085\u2028\u2029]|\r(?!\n)/.test(code)) problems.push('line breaks: only \\n or \\r\\n (no \\v, \\f, U+0085, U+2028, U+2029 or a lone \\r)');
   for (const name of REQUIRED) if (!directive(code, name)) problems.push(`needs a @${name} line`);
   const version = directive(code, 'version');
   if (version && !VERSION.test(version)) problems.push(`@version ${version}: use numbers like 1.2`);
