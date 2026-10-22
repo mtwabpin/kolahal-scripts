@@ -27,6 +27,10 @@ const NEEDS = [
   [/\blauncher\.run\s*\(/, 'commands', 'launcher.run()'],
 ];
 const REQUIRED = ['title', 'desc', 'author', 'version'];
+// As Kolahal's ScriptMeta.secrets: `@secret NAME site[,site] description`.
+const SECRET_NAME = /^[A-Za-z][A-Za-z0-9_]{0,39}$/;
+const HOST = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+const SECRETS_SINCE = '0.4.0';
 
 const directive = (code, name) => {
   const m = code.match(new RegExp(`^\\s*(--|//)\\s*@${name}\\b[ \\t]*(.*)$`, 'm'));
@@ -36,6 +40,14 @@ const allLines = (code, name) =>
   [...code.matchAll(new RegExp(`^\\s*(--|//)\\s*@${name}\\b(.*)$`, 'gm'))]
     .flatMap((m) => m[2].split(/[,\s]+/)).map((s) => s.trim().toLowerCase()).filter(Boolean);
 const has = (code, name) => new RegExp(`^\\s*(--|//)\\s*@${name}\\b`, 'm').test(code);
+
+/** True when version a is older than b ("0.3.1" < "0.4.0"). */
+const older = (a, b) => {
+  const x = a.split('.').map(Number);
+  const y = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) < (y[i] ?? 0);
+  return false;
+};
 
 /** "15m", "2h", "1d" or minutes: minutes, or null. */
 const interval = (v) => {
@@ -88,6 +100,22 @@ function check(dir) {
   for (const e of on) if (!EVENTS.includes(e)) problems.push(`@on ${e}: not an event (${EVENTS.join(', ')})`);
   for (const [call, what, shown] of NEEDS) if (call.test(code) && !uses.includes(what)) problems.push(`calls ${shown} but has no "@uses ${what}"`);
   if (on.includes('notification') && !uses.includes('notifications')) problems.push('@on notification needs "@uses notifications"');
+  // API keys: named with @secret, sent only to a site it names, read with secrets.get.
+  const secrets = [...code.matchAll(/^\s*(--|\/\/)\s*@secret\b(.*)$/gm)].map((m) => m[2].trim().split(/\s+/));
+  for (const [name = '', hosts = '', ...desc] of secrets) {
+    if (!SECRET_NAME.test(name)) problems.push(`@secret ${name}: a name like OWM_KEY (letters, digits and _, up to 40)`);
+    const sites = hosts.toLowerCase().split(',').filter(Boolean);
+    if (!sites.length) problems.push(`@secret ${name}: name the site it is sent to, like api.example.com`);
+    for (const h of sites) if (!HOST.test(h)) problems.push(`@secret ${name} ${h}: name the site it is sent to, like api.example.com`);
+    if (!desc.length) problems.push(`@secret ${name}: add a few words saying what it is and where to get one`);
+  }
+  const declared = secrets.map(([name]) => name);
+  for (const m of code.matchAll(/\bsecrets\.get\s*\(\s*["'`]([^"'`]*)["'`]/g)) {
+    if (!declared.includes(m[1])) problems.push(`calls secrets.get("${m[1]}") but has no "@secret ${m[1]} <site> <description>"`);
+  }
+  if ((secrets.length || /\bsecrets\.get\s*\(/.test(code)) && !(requires && VERSION.test(requires) && !older(requires, SECRETS_SINCE))) {
+    problems.push(`uses secrets, so it needs "@requires ${SECRETS_SINCE}" or newer`);
+  }
   const every = directive(code, 'every');
   if (every && !interval(every)) problems.push(`@every ${every}: use 15m, 2h or 1d`);
   const at = (directive(code, 'at') ?? '').split(/[,\s]+/).filter(Boolean);
