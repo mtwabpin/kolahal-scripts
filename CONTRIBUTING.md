@@ -17,6 +17,7 @@
    [Describing a script](https://mtwabpin.github.io/kolahal/scripting/overview/#describing-a-script)
    explains each one. [scripts/moon](scripts/moon/moon.lua) is a small example.
 4. Open a pull request. The check runs on it, and someone reads the code before it is merged.
+   By opening one, you share your script under the [MIT license](LICENSE), like everything here.
 
 To update a script, change it and raise its `@version`: Kolahal offers the update to everyone who
 has it and hasn't edited their copy.

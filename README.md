@@ -31,3 +31,7 @@ Every pull request is checked automatically, then read by a person before it is 
 
 To write one, start with the [scripting guide](https://mtwabpin.github.io/kolahal/scripting/overview/)
 and the [API](https://mtwabpin.github.io/kolahal/scripting/api/).
+
+## License
+
+Every script here is shared under the [MIT license](LICENSE).
