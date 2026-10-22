@@ -1,7 +1,7 @@
 -- @title Template: API key
 -- @desc a starting point for a script that needs an API key: you set the key on the phone, never in the code
 -- @author Kolahal
--- @version 1.0
+-- @version 1.1
 -- @every 6h
 -- @secret GITHUB_TOKEN api.github.com A GitHub token: github.com → Settings → Developer settings → Fine-grained tokens (no permissions needed)
 -- @tags template, github
@@ -26,7 +26,10 @@ local r = http.get("https://api.github.com/user", {
   Accept = "application/vnd.github+json",
   Authorization = "Bearer " .. token,
 })
-if r.status == 401 then return "GitHub doesn't accept that token: set GITHUB_TOKEN again" end
+if r.status == 401 then
+  status("GitHub: token refused")
+  return "GitHub doesn't accept that token: set GITHUB_TOKEN again"
+end
 if not r.ok then error("GitHub answered HTTP " .. r.status) end
 local me = json.decode(r.body)
 
