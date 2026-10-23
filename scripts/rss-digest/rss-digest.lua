@@ -1,7 +1,8 @@
 -- @title RSS Digest
 -- @desc new items from several feeds in one run, each line named after its feed
 -- @author Kolahal
--- @version 1.0
+-- @version 1.1
+-- @requires 0.4.1
 -- @every 1h
 -- @notify
 -- @tags feeds, rss, news
@@ -26,15 +27,16 @@ local total, first = 0, nil
 for _, f in ipairs(FEEDS) do
   local ok, feed = pcall(rss.fresh, f.url)
   if not ok then
-    log("[" .. f.name .. "] fetch failed (" .. tostring(feed) .. ")")
+    log(fmt.color("accent", f.name) .. " " .. fmt.color("bad", "fetch failed"), tostring(feed))
   else
     local items = feed.items or {}
     for i, item in ipairs(items) do
       if i > PER_FEED then
-        log("[" .. f.name .. "] … " .. (#items - PER_FEED) .. " more")
+        log(fmt.color("muted", f.name .. " … " .. (#items - PER_FEED) .. " more"))
         break
       end
-      log("[" .. f.name .. "] " .. (item.title or "(untitled)"), { url = item.link })
+      -- The feed's name in the accent colour; the title is web text, and fmt needs no escaping for it.
+      log(fmt.color("accent", f.name) .. " " .. (item.title or "(untitled)"), nil, { url = item.link })
     end
     if #items > 0 and first == nil then
       first = { feed = f.name, item = items[1] }

@@ -1,10 +1,10 @@
 -- @title Template: event
 -- @desc a starting point for a script that runs when something happens: here, plugging the charger in and out
 -- @author Kolahal
--- @version 1.0
+-- @version 1.1
 -- @on charger, unplug
 -- @tags template, battery
--- @requires 0.4.0
+-- @requires 0.4.1
 --
 -- A starting point for a script that runs when something happens on the phone. This one tells you
 -- how much a charge added, and how long it took. Nothing leaves the phone.
@@ -28,6 +28,6 @@ elseif event.name == "unplug" then
   status(nil) -- clears its header line
   if from and at and event.level then
     local minutes = math.floor((os.time() - at) / 60 + 0.5)
-    log(string.format("Charged %d%% → %d%% in %d min", from, event.level, minutes))
+    log("Charged " .. fmt.color("good", string.format("+%d%%", event.level - from)), string.format("%d%% → %d%% in %d min", from, event.level, minutes))
   end
 end

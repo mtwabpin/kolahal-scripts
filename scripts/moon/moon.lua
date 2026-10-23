@@ -1,12 +1,12 @@
 -- @title Moon Phase
 -- @desc today's moon phase and how much of it is lit; pins it in the header
 -- @author Kolahal
--- @version 1.0
+-- @version 1.1
 -- @command
 -- @usage
 -- @at 06:00
 -- @tags moon, sky
--- @requires 0.4.0
+-- @requires 0.4.1
 --
 -- Worked out on the phone: no network, nothing it needs to be allowed. Type `moon`, or let it run
 -- each morning: it logs the phase and pins it in the header (switch its header line off in the
@@ -41,4 +41,4 @@ end
 
 local line = string.format("%s %s, %d%% lit", icon, name, lit)
 status(line)
-return line
+log(icon .. " " .. name, fmt.bold(lit .. "%") .. " lit")

@@ -1,11 +1,11 @@
 // @title Template: JavaScript
 // @desc a starting point in JavaScript: a command that fetches JSON and logs a line you can tap
 // @author Kolahal
-// @version 1.0
+// @version 1.1
 // @command
 // @usage [topic]
 // @tags template, javascript
-// @requires 0.4.0
+// @requires 0.4.1
 //
 // The same building blocks as the Lua templates, in JavaScript (QuickJS). The script runs inside an
 // async function: `await` the http and rss calls, and `return` the result line. Try `template-js`,
@@ -19,6 +19,7 @@ if (r.status === 404) return `Wikipedia has no page called "${topic}"`;
 if (!r.ok) throw new Error("Wikipedia answered HTTP " + r.status);
 const page = JSON.parse(r.body);
 
-// The object after the text decides what tapping the line does: here, open the article.
-log(page.title, { url: page.content_urls.desktop.page });
+// log(title, body, ctx): the article's title, its short description muted under it; the object at
+// the end decides what tapping the line does: here, open the article. fmt styles parts of a line.
+log(page.title, page.description ? fmt.italic(page.description) : null, { url: page.content_urls.desktop.page });
 return page.extract;
