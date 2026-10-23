@@ -1,7 +1,7 @@
 -- @title Template: API key
--- @desc a starting point for a script that needs an API key: you set the key on the phone, never in the code
+-- @desc A starting point for a script that needs an API key: you set the key on the phone, never in the code
 -- @author Kolahal
--- @version 1.2
+-- @version 1.3
 -- @every 6h
 -- @secret GITHUB_TOKEN api.github.com A GitHub token: github.com → Settings → Developer settings → Fine-grained tokens (no permissions needed)
 -- @tags template, github

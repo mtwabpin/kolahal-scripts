@@ -6,8 +6,8 @@
 3. Start it with these lines (`//` instead of `--` in JavaScript):
 
    ```lua
-   -- @title Moon Phase
-   -- @desc today's moon phase and how much of it is lit
+   -- @title Moon phase
+   -- @desc Today's moon phase and how much of it is lit
    -- @author your GitHub name
    -- @version 1.0
    ```

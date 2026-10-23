@@ -1,7 +1,7 @@
 -- @title Template: timer
--- @desc a starting point for a script on a timer: checks something, remembers it, tells you when it changes
+-- @desc A starting point for a script on a timer: checks something, remembers it, tells you when it changes
 -- @author Kolahal
--- @version 1.1
+-- @version 1.2
 -- @every 6h
 -- @notify
 -- @tags template, github
@@ -33,10 +33,10 @@ store.set("seen", release.tag_name)
 
 if seen == nil then
   -- The first run only remembers what is there.
-  log(REPO, "watching: " .. fmt.code(release.tag_name) .. " is the newest release", { url = release.html_url })
+  log(REPO, "Watching: " .. fmt.code(release.tag_name) .. " is the newest release", { url = release.html_url })
 else
   -- fmt.color takes a role, and the theme picks the colour: good for news like this.
-  log(REPO, fmt.color("good", "new: ") .. fmt.code(release.tag_name), { url = release.html_url })
+  log(REPO, fmt.color("good", "New: ") .. fmt.code(release.tag_name), { url = release.html_url })
   -- notify() posts a notification if you let this script; tapping it opens the url.
-  notify(REPO .. " " .. release.tag_name, release.name or "A new release", { url = release.html_url })
+  notify(REPO .. " " .. release.tag_name, release.name or "New release", { url = release.html_url })
 end
