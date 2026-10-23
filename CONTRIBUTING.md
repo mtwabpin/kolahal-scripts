@@ -35,6 +35,7 @@ You can run it yourself with `node tools/check.mjs` (and `luac` for Lua syntax).
 - Known `@on` events, and `@every` / `@at` values Kolahal understands.
 - For an API key: `@secret NAME site description` naming the site it is sent to (not `*`), an
   `@secret` line for each name `secrets.get` reads, and `@requires 0.4.0` or newer.
+- `@requires 0.4.1` or newer for a script that calls `fmt`, `md` or `logs`.
 - No syntax errors, at most 64 KB, and no line longer than 300 characters.
 
 ## What a reviewer looks for

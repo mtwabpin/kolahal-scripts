@@ -15,7 +15,7 @@
 
 if not event then
   -- Run by hand (`script run template-event`): no event, so say what it does.
-  return "Runs when you plug the charger in and when you unplug it"
+  return log(fmt.color("muted", "Runs when you plug the charger in and when you unplug it"))
 end
 
 if event.name == "charger" then

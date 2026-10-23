@@ -1,11 +1,11 @@
 -- @title Template: API key
 -- @desc a starting point for a script that needs an API key: you set the key on the phone, never in the code
 -- @author Kolahal
--- @version 1.1
+-- @version 1.2
 -- @every 6h
 -- @secret GITHUB_TOKEN api.github.com A GitHub token: github.com → Settings → Developer settings → Fine-grained tokens (no permissions needed)
 -- @tags template, github
--- @requires 0.4.0
+-- @requires 0.4.1
 --
 -- A starting point for a script that calls an API with a key. This one shows your GitHub followers
 -- in the header. Talks to: api.github.com.
@@ -19,7 +19,8 @@
 local token = secrets.get("GITHUB_TOKEN")
 if not token then
   status("GitHub: set GITHUB_TOKEN")
-  return "Set GITHUB_TOKEN: Scripts → template-api-key → Secrets"
+  -- A hint, muted: fmt.color takes one of the theme's colours by role.
+  return log(fmt.color("muted", "Set GITHUB_TOKEN"), "Scripts → template-api-key → Secrets")
 end
 
 local r = http.get("https://api.github.com/user", {
@@ -28,7 +29,7 @@ local r = http.get("https://api.github.com/user", {
 })
 if r.status == 401 then
   status("GitHub: token refused")
-  return "GitHub doesn't accept that token: set GITHUB_TOKEN again"
+  return log(fmt.color("bad", "Token refused"), "GitHub doesn't accept it: set GITHUB_TOKEN again")
 end
 if not r.ok then error("GitHub answered HTTP " .. r.status) end
 local me = json.decode(r.body)

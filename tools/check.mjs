@@ -31,6 +31,8 @@ const REQUIRED = ['title', 'desc', 'author', 'version'];
 const SECRET_NAME = /^[A-Za-z][A-Za-z0-9_]{0,39}$/;
 const HOST = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
 const SECRETS_SINCE = '0.4.0';
+// fmt.*, md.* and logs(): an older Kolahal stops the script with an error.
+const STYLES_SINCE = '0.4.1';
 
 const directive = (code, name) => {
   const m = code.match(new RegExp(`^\\s*(--|//)\\s*@${name}\\b[ \\t]*(.*)$`, 'm'));
@@ -118,6 +120,9 @@ function check(dir) {
   }
   if ((secrets.length || /\bsecrets\.get\s*\(/.test(code)) && !(requires && VERSION.test(requires) && !older(requires, SECRETS_SINCE))) {
     problems.push(`uses secrets, so it needs "@requires ${SECRETS_SINCE}" or newer`);
+  }
+  if (/\b(fmt|md)\.\w+\s*\(|\blogs\s*\(/.test(code) && !(requires && VERSION.test(requires) && !older(requires, STYLES_SINCE))) {
+    problems.push(`uses fmt, md or logs, so it needs "@requires ${STYLES_SINCE}" or newer`);
   }
   const every = directive(code, 'every');
   if (every && !interval(every)) problems.push(`@every ${every}: use 15m, 2h or 1d`);

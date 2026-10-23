@@ -19,7 +19,7 @@ local REPO = "mtwabpin/kolahal"
 -- http.get returns { status, ok, body, headers }. A network error stops the run with an error
 -- line; an HTTP error doesn't, so check ok.
 local r = http.get("https://api.github.com/repos/" .. REPO .. "/releases/latest", { Accept = "application/vnd.github+json" })
-if r.status == 404 then return REPO .. " has no releases yet" end
+if r.status == 404 then return log(fmt.color("muted", REPO .. " has no releases yet")) end
 if not r.ok then error("GitHub answered HTTP " .. r.status) end
 local release = json.decode(r.body)
 
