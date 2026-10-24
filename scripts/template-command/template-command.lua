@@ -1,7 +1,7 @@
 -- @title Template: command
--- @desc a starting point for a command you type: reads its words, logs lines that do something when tapped
+-- @desc A starting point for a command you type: reads its words, logs lines that do something when tapped
 -- @author Kolahal
--- @version 1.1
+-- @version 1.2
 -- @command
 -- @usage [name]
 -- @tags template

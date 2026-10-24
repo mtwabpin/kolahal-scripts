@@ -1,7 +1,7 @@
 // @title Template: JavaScript
-// @desc a starting point in JavaScript: a command that fetches JSON and logs a line you can tap
+// @desc A starting point in JavaScript: a command that fetches JSON and logs a line you can tap
 // @author Kolahal
-// @version 1.1
+// @version 1.2
 // @command
 // @usage [topic]
 // @tags template, javascript
@@ -15,7 +15,7 @@ const topic = argline || "Android (operating system)";
 const r = await http.get(
   "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(topic.replace(/ /g, "_")),
 );
-if (r.status === 404) return log(fmt.color("muted", `Wikipedia has no page called "${topic}"`));
+if (r.status === 404) return log(fmt.color("muted", `Wikipedia has no page called '${topic}'`));
 if (!r.ok) throw new Error("Wikipedia answered HTTP " + r.status);
 const page = JSON.parse(r.body);
 

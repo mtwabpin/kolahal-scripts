@@ -1,7 +1,7 @@
--- @title RSS Digest
--- @desc new items from several feeds in one run, each line named after its feed
+-- @title RSS digest
+-- @desc New items from several feeds in one run, each line named after its feed
 -- @author Kolahal
--- @version 1.1
+-- @version 1.2
 -- @requires 0.4.1
 -- @every 1h
 -- @notify
@@ -15,28 +15,33 @@
 -- feed, and pins "Feeds: N new" in the header.
 
 local FEEDS = {
-  { name = "lobsters", url = "https://lobste.rs/rss" },
-  { name = "lwn",      url = "https://lwn.net/headlines/rss" },
-  { name = "ars",      url = "https://feeds.arstechnica.com/arstechnica/index" },
+  { name = "Lobsters", url = "https://lobste.rs/rss" },
+  { name = "LWN",      url = "https://lwn.net/headlines/rss" },
+  { name = "Ars",      url = "https://feeds.arstechnica.com/arstechnica/index" },
 }
 
 local PER_FEED = 5
 
 local total, first = 0, nil
 
+-- The feed's name starts each line, in the accent colour and padded to the longest, so the titles
+-- line up; mono keeps the terminal font for that. A title is web text: fmt needs no escaping for it.
+local widest = 0
+for _, f in ipairs(FEEDS) do widest = math.max(widest, #f.name) end
+local function name(f) return fmt.color("accent", f.name .. string.rep(" ", widest - #f.name)) end
+
 for _, f in ipairs(FEEDS) do
   local ok, feed = pcall(rss.fresh, f.url)
   if not ok then
-    log(fmt.color("accent", f.name) .. " " .. fmt.color("bad", "fetch failed"), tostring(feed))
+    log(name(f) .. "  " .. fmt.color("bad", "Fetch failed"), tostring(feed), { mono = "1" })
   else
     local items = feed.items or {}
     for i, item in ipairs(items) do
       if i > PER_FEED then
-        log(fmt.color("muted", f.name .. " … " .. (#items - PER_FEED) .. " more"))
+        log(name(f) .. "  " .. fmt.color("muted", "+" .. (#items - PER_FEED) .. " more"), nil, { mono = "1" })
         break
       end
-      -- The feed's name in the accent colour; the title is web text, and fmt needs no escaping for it.
-      log(fmt.color("accent", f.name) .. " " .. (item.title or "(untitled)"), nil, { url = item.link })
+      log(name(f) .. "  " .. (item.title or "(untitled)"), nil, { url = item.link, mono = "1" })
     end
     if #items > 0 and first == nil then
       first = { feed = f.name, item = items[1] }

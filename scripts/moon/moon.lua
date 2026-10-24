@@ -1,7 +1,7 @@
--- @title Moon Phase
--- @desc today's moon phase and how much of it is lit; pins it in the header
+-- @title Moon phase
+-- @desc Today's moon phase and how much of it is lit; pins it in the header
 -- @author Kolahal
--- @version 1.1
+-- @version 1.2
 -- @command
 -- @usage
 -- @at 06:00
@@ -20,15 +20,15 @@ local lit = math.floor((1 - math.cos(2 * math.pi * age / SYNODIC)) / 2 * 100 + 0
 
 -- Where each phase ends, in days since the new moon: an eighth of the cycle each.
 local PHASES = {
-  { 1.85, "🌑", "new moon" },
-  { 5.54, "🌒", "waxing crescent" },
-  { 9.23, "🌓", "first quarter" },
-  { 12.92, "🌔", "waxing gibbous" },
-  { 16.61, "🌕", "full moon" },
-  { 20.30, "🌖", "waning gibbous" },
-  { 23.99, "🌗", "last quarter" },
-  { 27.68, "🌘", "waning crescent" },
-  { SYNODIC + 1, "🌑", "new moon" },
+  { 1.85, "🌑", "New moon" },
+  { 5.54, "🌒", "Waxing crescent" },
+  { 9.23, "🌓", "First quarter" },
+  { 12.92, "🌔", "Waxing gibbous" },
+  { 16.61, "🌕", "Full moon" },
+  { 20.30, "🌖", "Waning gibbous" },
+  { 23.99, "🌗", "Last quarter" },
+  { 27.68, "🌘", "Waning crescent" },
+  { SYNODIC + 1, "🌑", "New moon" },
 }
 
 local icon, name
