@@ -1,30 +1,32 @@
 // @title Air quality
-// @desc Air quality now: aqi [city] | aqi --default <city> (European index, PM2.5, PM10, NO₂, O₃)
+// @desc Air quality now: aqi [city], without one its city option (European index, PM2.5, PM10, NO₂, O₃)
 // @author Kolahal
-// @version 1.0
+// @version 1.1
 // @command
-// @usage [<city>|--default <city>]
+// @usage [<city>]
 // @at 08:00
 // @tags weather, air, health
-// @requires 0.4.1
+// @requires 0.4.7
+// @option city "" The city when you type none
 //
 // Talks to: geocoding-api.open-meteo.com and air-quality-api.open-meteo.com (free, no key).
-// `aqi`, `aqi Delhi`, `aqi --default Pune`. On a timer (no arguments) it pins the index in the
-// header, in the theme's good, warn or bad colour.
+// `aqi Delhi`, or `aqi` for its city option (`script set aqi city Pune`). On a timer (no
+// arguments) it pins the index in the header, in the theme's good, warn or bad colour.
 
 // A failure: what didn't work, in the theme's bad colour, and why under it.
 const fail = (what, why) => log(fmt.color("bad", what), why);
 
 const line = (argline || "").trim();
 
+// The default city was saved with --default before it was an option.
 const setDefault = line.match(/^--default\s+(.+)$/);
 if (setDefault) {
-  store.set("city", setDefault[1].trim());
-  return log(`Default city: ${fmt.bold(setDefault[1].trim())}`);
+  return log(fmt.color("muted", `The default city is an option now: script set aqi city ${setDefault[1].trim()}`));
 }
 
-const city = line || store.get("city");
-if (!city) return log(fmt.color("muted", "No city yet: aqi <city>, or aqi --default <city> to save one"));
+// A city saved with --default still counts until the option is set.
+const city = line || (options.city || "").trim() || store.get("city");
+if (!city) return log(fmt.color("muted", "No city yet: aqi <city>, or script set aqi city <city> to keep one"));
 
 async function getJson(url) {
   const r = await http.get(url);

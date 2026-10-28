@@ -1,17 +1,18 @@
 -- @title Public holidays
--- @desc The next public holidays of a country: holidays [code] | holidays --default <code>
+-- @desc The next public holidays of a country: holidays [code], without one its country option
 -- @author Kolahal
--- @version 1.0
+-- @version 1.1
 -- @command
--- @usage [<country code>|--default <country code>]
+-- @usage [<country code>]
 -- @at 07:00
 -- @tags holidays, calendar
--- @requires 0.4.1
+-- @requires 0.4.7
+-- @option country "" The two-letter country code when you type none: US, GB, DE, FR…
 --
--- Talks to: date.nager.at (free, no key). A country is its two-letter code: IN, US, GB, DE…
--- `holidays IN` lists the next ones, lined up with how far off each is; `holidays --default IN`
--- saves the country, so `holidays` alone is enough, and on a timer it pins the next holiday in
--- the header.
+-- Talks to: date.nager.at (free, no key). A country is its two-letter code: US, GB, DE, FR… Not
+-- every country has its holidays there: India doesn't. `holidays GB` lists the next ones, lined up
+-- with how far off each is. With its country option set (`script set holidays country GB`),
+-- `holidays` alone is enough, and on a timer it pins the next holiday in the header.
 
 local function trim(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 
@@ -20,20 +21,26 @@ local function fail(what, why) log(fmt.color("bad", what), why) end
 
 local line = trim(argline or "")
 
-local saved = line:match("^%-%-default%s+(%a%a)$")
+-- The default country was saved with --default before it was an option.
+local saved = line:match("^%-%-default%s+(%S+)$")
 if saved then
-  store.set("country", saved:upper())
-  return log("Default country: " .. fmt.bold(saved:upper()))
+  return log(fmt.color("muted", "The default country is an option now: script set holidays country " .. saved:upper()))
 end
 
-local code = (line ~= "" and line or (store.get("country") or "")):upper()
+local code = line
+if code == "" then code = trim(options.country or "") end
+-- A country saved with --default still counts until the option is set.
+if code == "" then code = store.get("country") or "" end
+code = code:upper()
 if not code:match("^%a%a$") then
-  return log(fmt.color("muted", "Usage: holidays <country code> | holidays --default <country code>"), "Two letters, as in IN, US, GB or DE")
+  return log(fmt.color("muted", "Usage: holidays <country code>, or script set holidays country <code> to keep one"), "Two letters, as in US, GB, DE or FR")
 end
 
 local ok, r = pcall(http.get, "https://date.nager.at/api/v3/NextPublicHolidays/" .. code)
 if not ok then return fail("No holidays", "Network error: " .. tostring(r)) end
 if r.status == 404 then return fail("No holidays", "date.nager.at doesn't know the country " .. code) end
+-- A country it doesn't have holidays for (India, for one) comes back empty.
+if r.status == 204 then return fail("No holidays", "date.nager.at has no holidays for " .. code) end
 if not r.ok then return fail("No holidays", "date.nager.at answered HTTP " .. tostring(r.status)) end
 
 local okJson, list = pcall(json.decode, r.body or "")
