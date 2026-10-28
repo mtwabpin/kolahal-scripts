@@ -1,20 +1,28 @@
 -- @title Template: timer
 -- @desc A starting point for a script on a timer: checks something, remembers it, tells you when it changes
 -- @author Kolahal
--- @version 1.2
+-- @version 1.3
 -- @every 6h
 -- @notify
 -- @tags template, github
--- @requires 0.4.1
+-- @requires 0.4.7
+-- @option repo mtwabpin/kolahal The GitHub project to watch, as owner/name
 --
 -- A starting point for a script that runs by itself. This one watches a GitHub project for new
--- releases: Kolahal's, until you change REPO. Talks to: api.github.com.
+-- releases: Kolahal's, until you change its repo option. Talks to: api.github.com.
 --
 -- The @every line suggests a timer (15m, 1h, 1d…), set when the script is added; an @at line
 -- (`@at 07:00, 18:30`) runs it at set times instead. Change either in the script's sheet. The
 -- @notify line suggests letting it post notifications.
+--
+-- An @option line is a setting changed without editing the code: in the script's sheet
+-- (Options), or `script set template-timer repo neovim/neovim`. The code reads it as
+-- options.repo, always as text; the value after the name is its default.
 
-local REPO = "mtwabpin/kolahal"
+local REPO = options.repo
+if not REPO:match("^[%w%.%-_]+/[%w%.%-_]+$") then
+  return log(fmt.color("muted", "Set its repo option to owner/name: script set template-timer repo neovim/neovim"))
+end
 
 -- http.get returns { status, ok, body, headers }. A network error stops the run with an error
 -- line; an HTTP error doesn't, so check ok.

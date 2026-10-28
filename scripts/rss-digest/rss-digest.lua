@@ -1,26 +1,38 @@
 -- @title RSS digest
 -- @desc New items from several feeds in one run, each line named after its feed
 -- @author Kolahal
--- @version 1.2
--- @requires 0.4.1
+-- @version 1.3
+-- @requires 0.4.7
 -- @every 1h
 -- @notify
 -- @tags feeds, rss, news
+-- @option feeds "https://lobste.rs/rss https://lwn.net/headlines/rss https://feeds.arstechnica.com/arstechnica/index" Feed addresses, separated by spaces
+-- @option per_feed 5 The most new items it logs from one feed
 --
--- Talks to: the feeds in the FEEDS list below (Lobsters, LWN and Ars Technica to start with).
+-- Talks to: the feeds in its feeds option (Lobsters, LWN and Ars Technica to start with).
 --
 -- Kolahal has a feed reader built in (`feed add <url>`, or the Feeds screen), with read and unread
--- items and OPML. This script is for doing your own thing with feeds: edit the list, filter the
--- items, mix them with other data. Each run logs only items it hasn't seen, at most PER_FEED per
+-- items and OPML. This script is for doing your own thing with feeds: set its feeds in the script's
+-- sheet (Options) or with `script set rss-digest feeds <addresses>`, or edit it to filter the
+-- items and mix them with other data. Each run logs only items it hasn't seen, at most per_feed per
 -- feed, and pins "Feeds: N new" in the header.
 
-local FEEDS = {
-  { name = "Lobsters", url = "https://lobste.rs/rss" },
-  { name = "LWN",      url = "https://lwn.net/headlines/rss" },
-  { name = "Ars",      url = "https://feeds.arstechnica.com/arstechnica/index" },
-}
+-- A feed's name in the log: its site, without www. or feeds.
+local function site(url)
+  local host = url:match("^%a+://([^/:]+)") or url
+  return (host:gsub("^www%.", ""):gsub("^feeds%.", ""))
+end
 
-local PER_FEED = 5
+local FEEDS = {}
+for url in (options.feeds or ""):gmatch("%S+") do
+  FEEDS[#FEEDS + 1] = { name = site(url), url = url }
+end
+
+local PER_FEED = math.max(1, math.floor(tonumber(options.per_feed) or 5))
+
+if #FEEDS == 0 then
+  return log(fmt.color("muted", "No feeds: script set rss-digest feeds <addresses>"))
+end
 
 local total, first = 0, nil
 
