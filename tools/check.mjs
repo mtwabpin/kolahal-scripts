@@ -13,7 +13,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSyn
 import { join } from 'node:path';
 
 // As Kolahal's ScriptMeta: what `@uses` and `@on` may name.
-const USES = ['notifications', 'clipboard', 'apps', 'lan', 'commands'];
+const USES = ['notifications', 'clipboard', 'apps', 'lan', 'commands', 'dnd', 'work'];
 const EVENTS = ['unlock', 'charger', 'unplug', 'wifi', 'offline', 'notification', 'boot', 'headset'];
 const NAME = /^[a-z0-9_-]{1,40}$/;
 const VERSION = /^\d+(\.\d+){0,2}$/;
@@ -25,6 +25,8 @@ const NEEDS = [
   [/\bclipboard\.(get|set)\s*\(/, 'clipboard', 'clipboard.get() or .set()'],
   [/\bnotifications\.recent\s*\(/, 'notifications', 'notifications.recent()'],
   [/\blauncher\.run\s*\(/, 'commands', 'launcher.run()'],
+  [/\bdevice\.(dnd|setDnd)\s*\(/, 'dnd', 'device.dnd() or .setDnd()'],
+  [/\bdevice\.(work|setWork)\s*\(/, 'work', 'device.work() or .setWork()'],
 ];
 const REQUIRED = ['title', 'desc', 'author', 'version'];
 // As Kolahal's ScriptMeta.secrets: `@secret NAME site[,site] description`.
@@ -33,6 +35,8 @@ const HOST = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/
 const SECRETS_SINCE = '0.4.0';
 // fmt.*, md.* and logs(): an older Kolahal stops the script with an error.
 const STYLES_SINCE = '0.4.1';
+// @uses dnd and work, with device.dnd, setDnd, work and setWork.
+const DEVICE_SINCE = '0.4.4';
 
 const directive = (code, name) => {
   const m = code.match(new RegExp(`^\\s*(--|//)\\s*@${name}\\b[ \\t]*(.*)$`, 'm'));
@@ -123,6 +127,9 @@ function check(dir) {
   }
   if (/\b(fmt|md)\.\w+\s*\(|\blogs\s*\(/.test(code) && !(requires && VERSION.test(requires) && !older(requires, STYLES_SINCE))) {
     problems.push(`uses fmt, md or logs, so it needs "@requires ${STYLES_SINCE}" or newer`);
+  }
+  if ((uses.includes('dnd') || uses.includes('work')) && !(requires && VERSION.test(requires) && !older(requires, DEVICE_SINCE))) {
+    problems.push(`uses dnd or work, so it needs "@requires ${DEVICE_SINCE}" or newer`);
   }
   const every = directive(code, 'every');
   if (every && !interval(every)) problems.push(`@every ${every}: use 15m, 2h or 1d`);
