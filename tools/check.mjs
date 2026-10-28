@@ -37,6 +37,9 @@ const SECRETS_SINCE = '0.4.0';
 const STYLES_SINCE = '0.4.1';
 // @uses dnd and work, with device.dnd, setDnd, work and setWork.
 const DEVICE_SINCE = '0.4.4';
+// As Kolahal's ScriptMeta.options: `@option name default description`, read as options.name.
+const OPTION_NAME = /^[A-Za-z][A-Za-z0-9_]{0,31}$/;
+const OPTIONS_SINCE = '0.4.7';
 
 const directive = (code, name) => {
   const m = code.match(new RegExp(`^\\s*(--|//)\\s*@${name}\\b[ \\t]*(.*)$`, 'm'));
@@ -130,6 +133,24 @@ function check(dir) {
   }
   if ((uses.includes('dnd') || uses.includes('work')) && !(requires && VERSION.test(requires) && !older(requires, DEVICE_SINCE))) {
     problems.push(`uses dnd or work, so it needs "@requires ${DEVICE_SINCE}" or newer`);
+  }
+  // Settings: each named once, with a default and a description; each one the code reads declared
+  // (a misspelt name reads as nil). Comment lines are left out, so a note about options.x isn't a read.
+  const options = [...code.matchAll(/^\s*(--|\/\/)\s*@option\b(.*)$/gm)]
+    .map((m) => /^(\S*)\s*("[^"]*"|\S*)\s*(.*)$/.exec(m[2].trim()));
+  const optionNames = [];
+  for (const [, name, def, desc] of options) {
+    if (!OPTION_NAME.test(name)) problems.push(`@option ${name}: a name like city (letters, digits and _, up to 32)`);
+    else if (optionNames.includes(name)) problems.push(`@option ${name}: named twice`);
+    else if (!def) problems.push(`@option ${name}: give its default after the name ("" for none)`);
+    else if (!desc) problems.push(`@option ${name}: add a few words saying what it sets`);
+    optionNames.push(name);
+  }
+  const body = code.split('\n').filter((line) => !/^\s*(--|\/\/)/.test(line)).join('\n');
+  const read = [...new Set([...body.matchAll(/\boptions\.(\w+)/g)].map((m) => m[1]))];
+  for (const name of read) if (!optionNames.includes(name)) problems.push(`reads options.${name} but has no "@option ${name} <default> <description>"`);
+  if ((options.length || read.length) && !(requires && VERSION.test(requires) && !older(requires, OPTIONS_SINCE))) {
+    problems.push(`has options, so it needs "@requires ${OPTIONS_SINCE}" or newer`);
   }
   const every = directive(code, 'every');
   if (every && !interval(every)) problems.push(`@every ${every}: use 15m, 2h or 1d`);

@@ -13,7 +13,7 @@
    ```
 
    Then, as it needs them: `@command` and `@usage`, `@every` or `@at` and `@notify`, `@on`, `@uses`,
-   `@secret`, `@tags`, and `@requires` with the oldest Kolahal it works with.
+   `@secret`, `@option`, `@tags`, and `@requires` with the oldest Kolahal it works with.
    [Describing a script](https://mtwabpin.github.io/kolahal/scripting/overview/#describing-a-script)
    explains each one. [scripts/moon](scripts/moon/moon.lua) is a small example.
 4. Open a pull request. The check runs on it, and someone reads the code before it is merged.
@@ -38,6 +38,9 @@ You can run it yourself with `node tools/check.mjs` (and `luac` for Lua syntax).
   `@secret` line for each name `secrets.get` reads, and `@requires 0.4.0` or newer.
 - `@requires 0.4.1` or newer for a script that calls `fmt`, `md` or `logs`, and `@requires 0.4.4`
   or newer for one with `@uses dnd` or `@uses work`.
+- For a setting (a city, a feed's address, how many lines): `@option name default description`,
+  an `@option` line for each name the code reads as `options.name`, and `@requires 0.4.7` or newer.
+  [Options](https://mtwabpin.github.io/kolahal/scripting/overview/#options) explains them.
 - No syntax errors, at most 64 KB, and no line longer than 300 characters.
 
 ## What a reviewer looks for
