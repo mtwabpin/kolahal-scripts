@@ -11,7 +11,7 @@ Kolahal's script sandbox: on a timer, when something happens on the phone, or as
 - **Or by hand**: download a script's file, then Scripts → Import (the ⬆ at the top).
 
 A script you add arrives switched off. Switching it on shows what it asks to use (your apps, your
-notifications, the clipboard, your local network, running commands), and you can switch any of it
+notifications, the clipboard, running commands), and you can switch any of it
 off, then or later.
 
 ## What's here

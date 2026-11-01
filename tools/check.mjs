@@ -13,7 +13,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSyn
 import { join } from 'node:path';
 
 // As Kolahal's ScriptMeta: what `@uses` and `@on` may name.
-const USES = ['notifications', 'clipboard', 'apps', 'lan', 'commands', 'dnd', 'work'];
+const USES = ['notifications', 'clipboard', 'apps', 'commands', 'dnd', 'work'];
 const EVENTS = ['unlock', 'charger', 'unplug', 'wifi', 'offline', 'notification', 'boot', 'headset'];
 const NAME = /^[a-z0-9_-]{1,40}$/;
 const VERSION = /^\d+(\.\d+){0,2}$/;

@@ -31,8 +31,7 @@ You can run it yourself with `node tools/check.mjs` (and `luac` for Lua syntax).
 - An `@uses` line for everything that needs one: `apps` for `apps.list()`, `clipboard` for
   `clipboard.get()` and `.set()`, `notifications` for `notifications.recent()` and
   `@on notification`, `commands` for `launcher.run()`, `dnd` for `device.dnd()` and `.setDnd()`,
-  `work` for `device.work()` and `.setWork()`, and `lan` for requests to this phone or the local
-  network.
+  and `work` for `device.work()` and `.setWork()`.
 - Known `@on` events, and `@every` / `@at` values Kolahal understands.
 - For an API key: `@secret NAME site description` naming the site it is sent to (not `*`), an
   `@secret` line for each name `secrets.get` reads, and `@requires 0.4.0` or newer.
