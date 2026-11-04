@@ -40,6 +40,8 @@ const DEVICE_SINCE = '0.4.4';
 // As Kolahal's ScriptMeta.options: `@option name default description`, read as options.name.
 const OPTION_NAME = /^[A-Za-z][A-Za-z0-9_]{0,31}$/;
 const OPTIONS_SINCE = '0.4.7';
+// pin(): a line in the pinned header, with a progress bar and quick refreshes.
+const PIN_SINCE = '0.4.14';
 
 const directive = (code, name) => {
   const m = code.match(new RegExp(`^\\s*(--|//)\\s*@${name}\\b[ \\t]*(.*)$`, 'm'));
@@ -133,6 +135,9 @@ function check(dir) {
   }
   if ((uses.includes('dnd') || uses.includes('work')) && !(requires && VERSION.test(requires) && !older(requires, DEVICE_SINCE))) {
     problems.push(`uses dnd or work, so it needs "@requires ${DEVICE_SINCE}" or newer`);
+  }
+  if (/(?<![.\w])pin\s*\(/.test(code) && !(requires && VERSION.test(requires) && !older(requires, PIN_SINCE))) {
+    problems.push(`calls pin, so it needs "@requires ${PIN_SINCE}" or newer`);
   }
   // Settings: each named once, with a default and a description; each one the code reads declared
   // (a misspelt name reads as nil). Comment lines are left out, so a note about options.x isn't a read.
