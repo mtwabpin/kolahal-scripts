@@ -1,22 +1,24 @@
 // @title Live cricket
-// @desc Live cricket scores: the team option's live match pinned at the top of home while it's on; cricket live lists them all
+// @desc Live cricket scores: the team option's live match as its status line, to pin at the top of home; cricket live lists them all
 // @author Kolahal
-// @version 1.0
+// @version 1.1
 // @command
 // @usage [live|<team>]
 // @every 15m
 // @tags sport, cricket, live
-// @requires 0.4.14
-// @option team any The team whose live match is pinned, such as India or Mumbai; any: the first live international
+// @requires 0.4.7
+// @option team any The team whose live match it follows, such as India or Mumbai; any: the first live international
 // @option refresh 30 Seconds between updates while home shows the match (10 at the fastest)
 //
 // Talks to: site.web.api.espn.com, ESPN's scores. It isn't a documented API, so it can change
 // without notice.
 //
-// On its timer it looks for a live match of the team option and pins its score at the top of home
-// (with the header off), the overs as the bar. While home shows it, the score is fetched again every
-// refresh seconds; once the match ends, its result stays two hours. `cricket India` shows India's
-// match and pins it if it's on; `cricket live` lists every live match.
+// On its timer it looks for a live match of the team option and keeps its score as its status
+// line, the overs as the bar. Pin it (`script pin cricket`) and the score shows at the top of home,
+// fetched again every refresh seconds while home shows it (from Kolahal 0.4.14; older ones show the
+// line in the header, updated on the timer). Once the match ends, its result stays two hours.
+// `cricket India` shows India's match and follows it if it's on; `cricket live` lists every live
+// match.
 
 const PANEL = "https://site.web.api.espn.com/apis/site/v2/sports/cricket/scorepanel";
 const BOARD = (league) => `https://site.web.api.espn.com/apis/site/v2/sports/cricket/${league}/scoreboard`;
@@ -74,14 +76,14 @@ function progress(event) {
   return null;
 }
 
-// What's pinned: the match's line, its bar when there's a limit, and runs again while it's live.
-function pinMatch(event) {
+// Its status line: the match's line, its bar when there's a limit, and runs again while it's live.
+function showMatch(event) {
   if (state(event) === "in") {
     const p = progress(event);
     const every = Math.max(10, Number(options.refresh) || 30);
-    pin(line(event), p == null ? { refresh: every } : { progress: p, refresh: every });
+    status(line(event), p == null ? { refresh: every } : { progress: p, refresh: every });
   } else {
-    pin(line(event));
+    status(line(event));
   }
 }
 
@@ -99,26 +101,26 @@ async function followed(match) {
   return (board.events || []).find((e) => e.id === match.id) || null;
 }
 
-// Fetches the followed match again: pinned while it's on, its result for a while after.
+// Fetches the followed match again: its line while it's on, its result for a while after.
 async function update(match) {
   const event = await followed(match);
   if (!event) {
     store.set("match", null);
-    return pin(null);
+    return status(null);
   }
   if (state(event) === "post") {
     if (!match.ended) store.set("match", JSON.stringify({ ...match, ended: Date.now() }));
     else if (Date.now() - match.ended > RESULT_HOURS * 3600000) {
       store.set("match", null);
-      return pin(null);
+      return status(null);
     }
   }
-  pinMatch(event);
+  showMatch(event);
 }
 
 function follow(league, event) {
   store.set("match", JSON.stringify({ league, id: event.id }));
-  pinMatch(event);
+  showMatch(event);
 }
 
 const words = (argline || "").trim();
@@ -127,7 +129,7 @@ const match = kept();
 if (event && event.name === "refresh") {
   // While home shows the score: only the followed match's league, a few KB.
   if (match) await update(match);
-  else pin(null);
+  else status(null);
   return;
 }
 

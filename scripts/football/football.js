@@ -1,24 +1,25 @@
 // @title Live football
-// @desc Live football scores from one league: the team option's live match pinned at the top of home while it's on; football live lists them all
+// @desc Live football scores from one league: the team option's live match as its status line, to pin at the top of home; football live lists them all
 // @author Kolahal
-// @version 1.0
+// @version 1.1
 // @command
 // @usage [live|<team>]
 // @every 15m
 // @tags sport, football, soccer, live
-// @requires 0.4.14
+// @requires 0.4.7
 // @option league eng.1 The league: eng.1 (Premier League), esp.1, ger.1, ita.1, fra.1, uefa.champions, ind.1, usa.1, or another of ESPN's codes
-// @option team any The team whose live match is pinned, such as Arsenal; any: the league's first live match
+// @option team any The team whose live match it follows, such as Arsenal; any: the league's first live match
 // @option refresh 30 Seconds between updates while home shows the match (10 at the fastest)
 //
 // Talks to: site.api.espn.com, ESPN's scores. It isn't a documented API, so it can change without
 // notice.
 //
-// On its timer it looks in the league option for a live match of the team option and pins its
-// score at the top of home (with the header off), the minutes played as the bar. While home shows
-// it, the score is fetched again every refresh seconds; once the match ends, its result stays two
-// hours. `football Arsenal` shows Arsenal's match in the league and pins it if it's on;
-// `football live` lists the league's live matches.
+// On its timer it looks in the league option for a live match of the team option and keeps its
+// score as its status line, the minutes played as the bar. Pin it (`script pin football`) and the
+// score shows at the top of home, fetched again every refresh seconds while home shows it (from
+// Kolahal 0.4.14; older ones show the line in the header, updated on the timer). Once the match
+// ends, its result stays two hours. `football Arsenal` shows Arsenal's match in the league and
+// follows it if it's on; `football live` lists the league's live matches.
 
 const league = (options.league || "eng.1").trim();
 const BOARD = `https://site.api.espn.com/apis/site/v2/sports/soccer/${encodeURIComponent(league)}/scoreboard`;
@@ -58,13 +59,13 @@ function progress(event) {
   return m ? Math.min(1, Number(m[1]) / 90) : null;
 }
 
-function pinMatch(event) {
+function showMatch(event) {
   if (state(event) === "in") {
     const p = progress(event);
     const every = Math.max(10, Number(options.refresh) || 30);
-    pin(line(event), p == null ? { refresh: every } : { progress: p, refresh: every });
+    status(line(event), p == null ? { refresh: every } : { progress: p, refresh: every });
   } else {
-    pin(line(event));
+    status(line(event));
   }
 }
 
@@ -78,26 +79,26 @@ const kept = () => {
   }
 };
 
-// Fetches the followed match again: pinned while it's on, its result for a while after.
+// Fetches the followed match again: its line while it's on, its result for a while after.
 async function update(match, all) {
   const event = (all || (await matches())).find((e) => e.id === match.id);
   if (!event) {
     store.set("match", null);
-    return pin(null);
+    return status(null);
   }
   if (state(event) === "post") {
     if (!match.ended) store.set("match", JSON.stringify({ ...match, ended: Date.now() }));
     else if (Date.now() - match.ended > RESULT_HOURS * 3600000) {
       store.set("match", null);
-      return pin(null);
+      return status(null);
     }
   }
-  pinMatch(event);
+  showMatch(event);
 }
 
 function follow(event) {
   store.set("match", JSON.stringify({ league, id: event.id }));
-  pinMatch(event);
+  showMatch(event);
 }
 
 const words = (argline || "").trim();
@@ -105,7 +106,7 @@ const match = kept();
 
 if (event && event.name === "refresh") {
   if (match) await update(match);
-  else pin(null);
+  else status(null);
   return;
 }
 
