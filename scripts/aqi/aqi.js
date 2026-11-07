@@ -232,9 +232,11 @@ if (!token && scale === "us" && !store.get("tokenHint")) {
     { url: "https://aqicn.org/data-platform/token/" });
 }
 
-// The status line, to pin: from Kolahal 0.4.16 with a bar as full as the index is high, in its
-// band's colour (green, orange or red). An older Kolahal refuses a color, so it gets the line alone.
-const TOP = { us: 500, in: 500, eu: 100 };
+// The status line, to pin: from Kolahal 0.4.16 with a bar in its band's colour. While the air is
+// good, the bar fills toward the top of the good band (50, or 20 on the European scale); past it the
+// air isn't safe any more, so the bar is full and its colour (orange, then red) says how bad. An older
+// Kolahal refuses a color, so it gets the line alone.
+const GOOD_TOP = BANDS[scale][0][0];
 const aqi = figures[0][1];
 const text = `${name} ${aqi} · ${place.name}`;
-if (!line) status(text, newer ? { progress: Math.min(1, aqi / TOP[scale]), color: band(aqi)[1] } : undefined);
+if (!line) status(text, newer ? { progress: Math.min(1, aqi / GOOD_TOP), color: band(aqi)[1] } : undefined);
