@@ -69,14 +69,19 @@ function line(event) {
   return sides.join(" v ") + (summary ? ` · ${summary}` : "");
 }
 
-// How far the batting side's innings is, 0 to 1, from its overs out of the most it may bowl;
-// null without a limit (a Test).
+// How far the batting side's innings is, 0 to 1, from its overs out of the most it may bowl; null
+// without a limit (a Test).
+// - The batting side: the one chasing a target, if there is one; else the first with overs.
+// - All out (10 wickets: runs alone, "185 (42.3/47 ov)", or "185/10"): its innings is over, so the
+//   bar is full, however many overs were left.
 function progress(event) {
-  for (const c of teams(event)) {
-    const m = (c.score || "").match(/\((\d+)(?:\.(\d))?\/(\d+) ov/);
-    if (m) return Math.min(1, (Number(m[1]) * 6 + Number(m[2] || 0)) / (Number(m[3]) * 6));
-  }
-  return null;
+  const overs = /\((\d+)(?:\.(\d))?\/(\d+) ov/;
+  const scores = teams(event).map((c) => (c.score || "").trim());
+  const batting = scores.find((s) => s.includes("target") && overs.test(s)) || scores.find((s) => overs.test(s));
+  if (!batting) return null;
+  if (/^\d+\s*\(/.test(batting) || /\/10\b/.test(batting)) return 1;
+  const m = batting.match(overs);
+  return Math.min(1, (Number(m[1]) * 6 + Number(m[2] || 0)) / (Number(m[3]) * 6));
 }
 
 // Its status line: the match's line, its bar when there's a limit, and runs again while it's live.
