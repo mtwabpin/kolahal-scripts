@@ -1,7 +1,7 @@
 // @title Live cricket
 // @desc Live cricket scores: the team option's live match as its status line, to pin at the top of home; cricket live lists them all
 // @author Kolahal
-// @version 1.2
+// @version 1.3
 // @command
 // @usage [live|<team>]
 // @every 15m
@@ -49,14 +49,28 @@ const international = (event) => {
   return !!c && c.internationalClassId && c.internationalClassId !== "0";
 };
 
-// Whether a team named like [name] plays in the match: its name, short name or abbreviation.
+// How well a team named [name] plays in the match, by its name, short name or abbreviation:
+// 2 for the exact name, 1 for a longer name that starts with it ("Mumbai" for "Mumbai Indians"),
+// 0 when no team matches.
 function plays(event, name) {
   const want = name.toLowerCase();
-  return teams(event).some((c) => {
+  let best = 0;
+  for (const c of teams(event)) {
     const t = c.team || {};
-    return [t.displayName, t.shortDisplayName, t.name, t.abbreviation]
-      .filter(Boolean).some((n) => n.toLowerCase() === want || n.toLowerCase().startsWith(want + " "));
-  });
+    for (const n of [t.displayName, t.shortDisplayName, t.name, t.abbreviation].filter(Boolean)) {
+      if (n.toLowerCase() === want) return 2;
+      if (n.toLowerCase().startsWith(want + " ")) best = 1;
+    }
+  }
+  return best;
+}
+
+// The matches in [list] of a team named [name]: those with the exact name if there are any, else
+// those with a longer name. So "India" finds India, not India A or India Women.
+function matchesOf(list, name) {
+  const scored = list.map((m) => [m, plays(m.event, name)]);
+  const best = Math.max(0, ...scored.map(([, s]) => s));
+  return best ? scored.filter(([, s]) => s === best).map(([m]) => m) : [];
 }
 
 // A score without what the line can do without: "42/1 (8.5/50 ov, target 186)" is "42/1 (8.5 ov)".
@@ -149,7 +163,7 @@ if (!words) {
     if (match) await update(match);
     const team = (options.team || "any").trim();
     const live = (await allMatches()).filter((m) => state(m.event) === "in");
-    const found = team.toLowerCase() === "any" ? live.find((m) => international(m.event)) : live.find((m) => plays(m.event, team));
+    const found = team.toLowerCase() === "any" ? live.find((m) => international(m.event)) : matchesOf(live, team)[0];
     if (found && (!match || found.event.id !== match.id)) follow(found.league, found.event);
   } catch (e) {
     // Tried again at the next run.
@@ -185,7 +199,7 @@ if (words.toLowerCase() === "live") {
 }
 
 // A team: its live match first, then the latest or next one.
-const theirs = matches.filter((m) => plays(m.event, words));
+const theirs = matchesOf(matches, words);
 const found = theirs.find((m) => state(m.event) === "in") || theirs[0];
 if (!found) return log(fmt.color("muted", `No match for ${words}`), "cricket live lists the live ones");
 const e = found.event;

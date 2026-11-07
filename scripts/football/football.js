@@ -1,7 +1,7 @@
 // @title Live football
 // @desc Live football scores from one league: the team option's live match as its status line, to pin at the top of home; football live lists them all
 // @author Kolahal
-// @version 1.2
+// @version 1.3
 // @command
 // @usage [live|<team>]
 // @every 15m
@@ -37,14 +37,28 @@ async function matches() {
 const sides = (event) => (event.competitions && event.competitions[0] && event.competitions[0].competitors) || [];
 const state = (event) => (event.status && event.status.type && event.status.type.state) || "";
 
-// Whether a team named like [name] plays in the match: its name, short name or abbreviation.
+// How well a team named [name] plays in the match, by its name, short name or abbreviation:
+// 2 for the exact name, 1 for a longer name that starts with it ("Manchester" for "Manchester
+// City"), 0 when no team matches.
 function plays(event, name) {
   const want = name.toLowerCase();
-  return sides(event).some((c) => {
+  let best = 0;
+  for (const c of sides(event)) {
     const t = c.team || {};
-    return [t.displayName, t.shortDisplayName, t.name, t.abbreviation]
-      .filter(Boolean).some((n) => n.toLowerCase() === want || n.toLowerCase().startsWith(want + " "));
-  });
+    for (const n of [t.displayName, t.shortDisplayName, t.name, t.abbreviation].filter(Boolean)) {
+      if (n.toLowerCase() === want) return 2;
+      if (n.toLowerCase().startsWith(want + " ")) best = 1;
+    }
+  }
+  return best;
+}
+
+// The matches in [list] of a team named [name]: those with the exact name if there are any, else
+// those with a longer name. So "Arsenal" finds Arsenal, not Arsenal Women.
+function matchesOf(list, name) {
+  const scored = list.map((e) => [e, plays(e, name)]);
+  const best = Math.max(0, ...scored.map(([, s]) => s));
+  return best ? scored.filter(([, s]) => s === best).map(([e]) => e) : [];
 }
 
 // "ARS 2–1 CHE · 67'", home first; "HT" or "FT" when it's that.
@@ -122,7 +136,7 @@ if (!words) {
     if (match && !match.ended && all.some((e) => e.id === match.id && state(e) !== "post")) return;
     const team = (options.team || "any").trim();
     const live = all.filter((e) => state(e) === "in");
-    const found = team.toLowerCase() === "any" ? live[0] : live.find((e) => plays(e, team));
+    const found = team.toLowerCase() === "any" ? live[0] : matchesOf(live, team)[0];
     if (found && (!match || found.id !== match.id)) follow(found);
   } catch (e) {
     // Tried again at the next run.
@@ -154,7 +168,7 @@ if (words.toLowerCase() === "live") {
 }
 
 // A team: its live match first, then the latest or next one.
-const theirs = all.filter((e) => plays(e, words));
+const theirs = matchesOf(all, words);
 const found = theirs.find((e) => state(e) === "in") || theirs[0];
 if (!found) return log(fmt.color("muted", `No match for ${words} in ${league}`), "football live lists the live ones");
 const when = state(found) === "pre" ? `Starts ${new Date(found.date).toLocaleString()}` : "";

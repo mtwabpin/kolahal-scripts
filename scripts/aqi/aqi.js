@@ -216,14 +216,15 @@ const where = [place.name, place.country_code].filter(Boolean).join(", ");
 if (newer) {
   const table = fmt.table(rows.map(([n, value, unit], i) => [n, tint(i, value), unit]), { align: "lrl" });
   log(`${where} · ${name}`, [table, ...notes].join("\n"), { url });
+} else {
+  const nameWidth = Math.max(...rows.map((r) => r[0].length));
+  const valueWidth = Math.max(...rows.map((r) => r[1].length));
+  const body = rows
+    .map(([n, value, unit], i) => tint(i, `${n.padEnd(nameWidth)}  ${value.padStart(valueWidth)}  ${unit}`))
+    .concat(notes)
+    .join("\n");
+  log(`${where} · ${name}`, body, { url, mono: "1" });
 }
-const nameWidth = Math.max(...rows.map((r) => r[0].length));
-const valueWidth = Math.max(...rows.map((r) => r[1].length));
-const body = rows
-  .map(([n, value, unit], i) => tint(i, `${n.padEnd(nameWidth)}  ${value.padStart(valueWidth)}  ${unit}`))
-  .concat(notes)
-  .join("\n");
-if (!newer) log(`${where} · ${name}`, body, { url, mono: "1" });
 
 // Once, without a token: how to get the nearest station's reading instead of the model's.
 if (!token && scale === "us" && !store.get("tokenHint")) {
