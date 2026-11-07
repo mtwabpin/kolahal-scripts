@@ -1,7 +1,7 @@
 // @title Live cricket
 // @desc Live cricket scores: the team option's live match as its status line, to pin at the top of home; cricket live lists them all
 // @author Kolahal
-// @version 1.1
+// @version 1.2
 // @command
 // @usage [live|<team>]
 // @every 15m
@@ -19,6 +19,9 @@
 // line in the header, updated on the timer). Once the match ends, its result stays two hours.
 // `cricket India` shows India's match and follows it if it's on; `cricket live` lists every live
 // match.
+//
+// From Kolahal 0.4.16, `cricket live` and a team's match show as tables (fmt.table); an older
+// Kolahal shows them as lines, as before.
 
 const PANEL = "https://site.web.api.espn.com/apis/site/v2/sports/cricket/scorepanel";
 const BOARD = (league) => `https://site.web.api.espn.com/apis/site/v2/sports/cricket/${league}/scoreboard`;
@@ -156,10 +159,24 @@ try {
   return log(fmt.color("bad", "No cricket scores"), `${e.message || e}`);
 }
 
+// Tables need Kolahal 0.4.16. An older one has no fmt.table, and gets lines as before.
+const tables = typeof fmt.table === "function";
+const abbr = (c) => (c.team && c.team.abbreviation) || "?";
+const summary = (event) => (event.status && event.status.summary) || "";
+
 if (words.toLowerCase() === "live") {
   const live = matches.filter((m) => state(m.event) === "in");
   if (!live.length) return log(fmt.color("muted", "No live matches"));
-  return logs(live.map((m) => line(m.event)));
+  if (!tables) return logs(live.map((m) => line(m.event)));
+  // One row a match: who plays, the scores, and how it stands.
+  const rows = live.map((m) => {
+    const sides = teams(m.event);
+    // Each side's score in its place, "–" for one that hasn't batted, so a score is never the wrong side's.
+    const each = sides.map((c) => shortScore(c.score));
+    const scores = each.some(Boolean) ? each.map((s) => s || "–").join(" · ") : "";
+    return [sides.map(abbr).join(" v "), scores, summary(m.event)];
+  });
+  return log(`${live.length} live`, fmt.table([["Match", "Score", "Status"], ...rows], { header: true }));
 }
 
 // A team: its live match first, then the latest or next one.
@@ -168,5 +185,12 @@ const found = theirs.find((m) => state(m.event) === "in") || theirs[0];
 if (!found) return log(fmt.color("muted", `No match for ${words}`), "cricket live lists the live ones");
 const e = found.event;
 const when = state(e) === "pre" ? `Starts ${new Date(e.date).toLocaleString()}` : (e.status && e.status.type && e.status.type.detail) || "";
-log(line(e), [e.name, e.competitions && e.competitions[0] && e.competitions[0].description, when].filter(Boolean).join(" · "));
+const about = [e.competitions && e.competitions[0] && e.competitions[0].description, when].filter(Boolean).join(" · ");
+if (tables) {
+  // The match as its title, how it stands, then each side's score.
+  const card = fmt.table([["Team", "Score"], ...teams(e).map((c) => [(c.team && c.team.displayName) || abbr(c), c.score || "—"])], { header: true });
+  log(e.name || line(e), [summary(e), card, about].filter(Boolean).join("\n"));
+} else {
+  log(line(e), [e.name, about].filter(Boolean).join(" · "));
+}
 if (state(e) === "in") follow(found.league, e);
