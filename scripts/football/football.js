@@ -1,7 +1,7 @@
 // @title Live football
 // @desc Live football scores from one league: the team option's live match as its status line, to pin at the top of home; football live lists them all
 // @author Kolahal
-// @version 1.1
+// @version 1.2
 // @command
 // @usage [live|<team>]
 // @every 15m
@@ -20,6 +20,9 @@
 // Kolahal 0.4.14; older ones show the line in the header, updated on the timer). Once the match
 // ends, its result stays two hours. `football Arsenal` shows Arsenal's match in the league and
 // follows it if it's on; `football live` lists the league's live matches.
+//
+// From Kolahal 0.4.16, `football live` shows as a table (fmt.table); an older Kolahal shows lines,
+// as before.
 
 const league = (options.league || "eng.1").trim();
 const BOARD = `https://site.api.espn.com/apis/site/v2/sports/soccer/${encodeURIComponent(league)}/scoreboard`;
@@ -137,7 +140,17 @@ try {
 if (words.toLowerCase() === "live") {
   const live = all.filter((e) => state(e) === "in");
   if (!live.length) return log(fmt.color("muted", `No live matches in ${league}`), "script set football league <code> picks another league");
-  return logs(live.map(line));
+  if (typeof fmt.table !== "function") return logs(live.map(line));
+  // One row a match: home, the score, away and the clock. Tables need Kolahal 0.4.16; an older one
+  // gets the lines above.
+  const rows = live.map((e) => {
+    const [home, away] = ["home", "away"].map((h) => sides(e).find((c) => c.homeAway === h) || {});
+    const abbr = (c) => (c.team && c.team.abbreviation) || "?";
+    const type = (e.status && e.status.type) || {};
+    const clock = type.shortDetail !== "HT" ? (e.status && e.status.displayClock) || "" : "HT";
+    return [abbr(home), `${home.score ?? ""}–${away.score ?? ""}`, abbr(away), clock];
+  });
+  return log(`${live.length} live in ${league}`, fmt.table(rows, { align: "rllr" }));
 }
 
 // A team: its live match first, then the latest or next one.
