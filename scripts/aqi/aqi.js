@@ -1,7 +1,7 @@
 // @title Air quality
 // @desc Air quality: aqi [city], without one its city option (US, Indian or European index; the nearest station's with a WAQI token)
 // @author Kolahal
-// @version 1.2
+// @version 1.3
 // @command
 // @usage [<city>]
 // @at 08:00
@@ -205,22 +205,25 @@ if (station) {
   url = `https://open-meteo.com/en/docs/air-quality-api#latitude=${place.latitude}&longitude=${place.longitude}`;
 }
 
-// The place and scale are the title; a column of figures and readings under it, padded so the
-// numbers line up (mono keeps the terminal font for that), each figure in the colour of its band.
+// The place and scale are the title; the figures and readings under it, each figure in the colour
+// of its band. From Kolahal 0.4.16 a table (fmt.table); before, a column padded so the numbers line
+// up (mono keeps the terminal font for that).
+const newer = typeof fmt.table === "function";
 const name = `${scale.toUpperCase()} AQI`;
 const rows = [...figures.map(([n, v]) => [n, String(v), band(v)[0]]), ...readings];
+const tint = (i, text) => (i < figures.length ? fmt.color(band(figures[i][1])[1], text) : text);
+const where = [place.name, place.country_code].filter(Boolean).join(", ");
+if (newer) {
+  const table = fmt.table(rows.map(([n, value, unit], i) => [n, tint(i, value), unit]), { align: "lrl" });
+  log(`${where} · ${name}`, [table, ...notes].join("\n"), { url });
+}
 const nameWidth = Math.max(...rows.map((r) => r[0].length));
 const valueWidth = Math.max(...rows.map((r) => r[1].length));
 const body = rows
-  .map(([n, value, unit], i) => {
-    const text = `${n.padEnd(nameWidth)}  ${value.padStart(valueWidth)}  ${unit}`;
-    return i < figures.length ? fmt.color(band(figures[i][1])[1], text) : text;
-  })
+  .map(([n, value, unit], i) => tint(i, `${n.padEnd(nameWidth)}  ${value.padStart(valueWidth)}  ${unit}`))
   .concat(notes)
   .join("\n");
-
-const where = [place.name, place.country_code].filter(Boolean).join(", ");
-log(`${where} · ${name}`, body, { url, mono: "1" });
+if (!newer) log(`${where} · ${name}`, body, { url, mono: "1" });
 
 // Once, without a token: how to get the nearest station's reading instead of the model's.
 if (!token && scale === "us" && !store.get("tokenHint")) {
@@ -229,4 +232,9 @@ if (!token && scale === "us" && !store.get("tokenHint")) {
     { url: "https://aqicn.org/data-platform/token/" });
 }
 
-if (!line) status(`${name} ${figures[0][1]} · ${place.name}`);
+// The status line, to pin: from Kolahal 0.4.16 with a bar as full as the index is high, in its
+// band's colour (green, orange or red). An older Kolahal refuses a color, so it gets the line alone.
+const TOP = { us: 500, in: 500, eu: 100 };
+const aqi = figures[0][1];
+const text = `${name} ${aqi} · ${place.name}`;
+if (!line) status(text, newer ? { progress: Math.min(1, aqi / TOP[scale]), color: band(aqi)[1] } : undefined);
