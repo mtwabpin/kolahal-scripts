@@ -1,7 +1,7 @@
 -- @title Moon phase
 -- @desc Today's moon phase and how much of it is lit; pins it in the header
 -- @author Kolahal
--- @version 1.2
+-- @version 1.3
 -- @command
 -- @usage
 -- @at 06:00
@@ -41,4 +41,14 @@ end
 
 local line = string.format("%s %s, %d%% lit", icon, name, lit)
 status(line)
-log(icon .. " " .. name, fmt.bold(lit .. "%") .. " lit")
+
+-- From Kolahal 0.5.0, big numbers: how much is lit, large, then the moon's age and the next full
+-- moon (half a cycle after the new one; "Today" within a day of it). An older Kolahal gets one line.
+if fmt.stats then
+  local toFull = (SYNODIC / 2 - age) % SYNODIC
+  local fullOn = os.time() + math.floor(toFull * 86400)
+  local full = (toFull < 1 or toFull > SYNODIC - 1) and "Today" or (tonumber(os.date("%d", fullOn)) .. " " .. os.date("%b", fullOn))
+  log(icon .. " " .. name, fmt.stats({ { lit .. "%", "lit" }, { string.format("%.1f", age), "days old" }, { full, "full moon" } }))
+else
+  log(icon .. " " .. name, fmt.bold(lit .. "%") .. " lit")
+end

@@ -1,7 +1,7 @@
 -- @title Public holidays
 -- @desc The next public holidays of a country: holidays [code], without one its country option
 -- @author Kolahal
--- @version 1.1
+-- @version 1.2
 -- @command
 -- @usage [<country code>]
 -- @at 07:00
@@ -65,7 +65,10 @@ for i, h in ipairs(list) do
     local t = noon(tonumber(y), tonumber(m), tonumber(d))
     local name = h.localName or h.name or "?"
     if h.name and h.name ~= name then name = name .. " (" .. h.name .. ")" end
-    rows[#rows + 1] = { on = os.date("%a %d %b", t), name = name, days = math.floor(os.difftime(t, today) / DAY + 0.5) }
+    rows[#rows + 1] = {
+      on = os.date("%a %d %b", t), name = name, days = math.floor(os.difftime(t, today) / DAY + 0.5),
+      dayMonth = tonumber(os.date("%d", t)) .. " " .. os.date("%b", t), weekday = os.date("%A", t),
+    }
     widest = math.max(widest, width(name))
   end
 end
@@ -76,12 +79,32 @@ local function inDays(days)
   return "in " .. days .. " days"
 end
 
--- Lined up: the name padded to the longest; this week's in the warning colour. mono keeps the
--- terminal font, so the columns hold.
-for _, row in ipairs(rows) do
-  local text = row.on .. "  " .. row.name .. string.rep(" ", widest - width(row.name)) .. "  " .. inDays(row.days)
-  if row.days <= 7 then text = fmt.color("warn", text) end
-  log(text, nil, { mono = "1" })
+-- From Kolahal 0.5.0, one line: the next holiday in big numbers (the days to it large, coloured
+-- when it's this week, with its name under them, then its date and weekday), and the rest in a
+-- table. An older Kolahal gets a line for each, lined up: the name padded to the longest, this
+-- week's in the warning colour, mono keeping the terminal font so the columns hold.
+if fmt.stats and rows[1] then
+  local first = rows[1]
+  local function soon(days, text) return days <= 7 and fmt.color("warn", text) or text end
+  local count, under
+  if first.days == 0 then
+    count, under = "Today", first.name
+  else
+    count, under = tostring(first.days), (first.days == 1 and "day to " or "days to ") .. first.name
+  end
+  local body = { fmt.stats({ { soon(first.days, count), under }, { first.dayMonth, first.weekday } }) }
+  if rows[2] then
+    local rest = {}
+    for i = 2, #rows do rest[#rest + 1] = { rows[i].on, soon(rows[i].days, rows[i].name), soon(rows[i].days, inDays(rows[i].days)) } end
+    body[#body + 1] = fmt.table(rest, { align = "llr" })
+  end
+  log("Holidays in " .. code, table.concat(body, "\n"))
+else
+  for _, row in ipairs(rows) do
+    local text = row.on .. "  " .. row.name .. string.rep(" ", widest - width(row.name)) .. "  " .. inDays(row.days)
+    if row.days <= 7 then text = fmt.color("warn", text) end
+    log(text, nil, { mono = "1" })
+  end
 end
 
 if rows[1] then status(rows[1].name .. " " .. inDays(rows[1].days)) else status(nil) end
