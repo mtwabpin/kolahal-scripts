@@ -1,7 +1,7 @@
 -- @title RSS digest
 -- @desc New items from several feeds in one run, each line named after its feed
 -- @author Kolahal
--- @version 1.3
+-- @version 1.4
 -- @requires 0.4.7
 -- @every 1h
 -- @notify
@@ -53,7 +53,9 @@ for _, f in ipairs(FEEDS) do
         log(name(f) .. "  " .. fmt.color("muted", "+" .. (#items - PER_FEED) .. " more"), nil, { mono = "1" })
         break
       end
-      log(name(f) .. "  " .. (item.title or "(untitled)"), nil, { url = item.link, mono = "1" })
+      -- A small space above each item (gap, from Kolahal 0.5.0; older ones ignore it) keeps the
+      -- items apart when a title wraps.
+      log(name(f) .. "  " .. (item.title or "(untitled)"), nil, { url = item.link, mono = "1", gap = true })
     end
     if #items > 0 and first == nil then
       first = { feed = f.name, item = items[1] }

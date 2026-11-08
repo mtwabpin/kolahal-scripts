@@ -1,7 +1,7 @@
 // @title Define
 // @desc Define an English word: define <word>
 // @author Kolahal
-// @version 1.0
+// @version 1.1
 // @command
 // @usage <word>
 // @tags dictionary, words
@@ -49,6 +49,8 @@ for (const meaning of entry.meanings || []) {
   for (const d of (meaning.definitions || []).slice(0, 2)) {
     if (shown++ >= MAX) break;
     const example = d.example ? `“${d.example}”` : null;
-    log(`${fmt.color("accent", meaning.partOfSpeech)}  ${d.definition}`, example, { url });
+    // A small space above each definition (gap, from Kolahal 0.5.0; older ones ignore it) keeps
+    // each one apart from the example above it.
+    log(`${fmt.color("accent", meaning.partOfSpeech)}  ${d.definition}`, example, { url, gap: true });
   }
 }
