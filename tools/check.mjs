@@ -13,7 +13,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSyn
 import { join } from 'node:path';
 
 // As Kolahal's ScriptMeta: what `@uses` and `@on` may name.
-const USES = ['notifications', 'clipboard', 'apps', 'commands', 'dnd', 'work'];
+const USES = ['notifications', 'clipboard', 'apps', 'commands', 'dnd', 'work', 'todos', 'notes', 'reminders', 'calendar', 'feeds', 'usage'];
 const EVENTS = ['unlock', 'charger', 'unplug', 'wifi', 'offline', 'notification', 'boot', 'headset'];
 const NAME = /^[a-z0-9_-]{1,40}$/;
 const VERSION = /^\d+(\.\d+){0,2}$/;
@@ -27,6 +27,12 @@ const NEEDS = [
   [/\blauncher\.run\s*\(/, 'commands', 'launcher.run()'],
   [/\bdevice\.(dnd|setDnd)\s*\(/, 'dnd', 'device.dnd() or .setDnd()'],
   [/\bdevice\.(work|setWork)\s*\(/, 'work', 'device.work() or .setWork()'],
+  [/\btodos\.(list|setDone)\s*\(/, 'todos', 'todos.list() or .setDone()'],
+  [/\bnotes\.list\s*\(/, 'notes', 'notes.list()'],
+  [/\breminders\.list\s*\(/, 'reminders', 'reminders.list()'],
+  [/\bcalendar\.events\s*\(/, 'calendar', 'calendar.events()'],
+  [/\bfeeds\.unread\s*\(/, 'feeds', 'feeds.unread()'],
+  [/\busage\.(today|days|data|unused)\s*\(/, 'usage', 'usage.today(), .days(), .data() or .unused()'],
 ];
 const REQUIRED = ['title', 'desc', 'author', 'version'];
 // As Kolahal's ScriptMeta.secrets: `@secret NAME site[,site] description`.
