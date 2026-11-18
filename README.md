@@ -22,9 +22,11 @@ off, then or later.
   what it uses and when it runs. [Describing a script](https://mtwabpin.github.io/kolahal/scripting/overview/#describing-a-script)
   lists them all.
 - Scripts named `template-…` are starting points: short, commented scripts that show one way of
-  working each. `template-command` (a command you type), `template-timer` (runs by itself and
-  tells you what changed), `template-api-key` (an API key you set on the phone), `template-event`
-  (runs when something happens on the phone) and `template-js` (the same in JavaScript).
+  working each: a command you type, a timer, an event on the phone, an API key, a fetch, every kind
+  of log line, and two widgets. Each comes in Lua and in JavaScript (`-js`).
+- Kolahal's own library is here too: the 43 ready-made scripts that come with the app, such as
+  `weather`, `hn`, `countdown` and `habit`, by Kolahal. They are the same files as in the app's
+  **Add script → From the library**, and are updated here when the app's are.
 - `index.json`, published at https://mtwabpin.github.io/kolahal-scripts/index.json, lists every
   script with its checksum. Kolahal reads it, and checks each file against it before installing.
 

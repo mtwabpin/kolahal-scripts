@@ -1,0 +1,85 @@
+-- hn.lua — Hacker News front page, only stories you have not seen yet.
+-- @desc Hacker News front page: new stories since the last run
+-- @title Hacker News
+-- @author Kolahal
+-- @version 1.0
+-- @requires 0.5.9
+-- @widget list 4x2
+-- @every 1h
+-- @notify
+-- @option points 50 Only stories with at least this many points; 0: every story
+-- @option lines 10 Maximum stories logged per run
+--
+-- Runs well on a timer (every 30-60 min). Each run logs the new front-page stories, each followed
+-- by its points and a link to its comments (tap the line to open the story). It notifies about the
+-- top new one. It pins no line at the top of home: a list of stories has nothing to pin there.
+-- Its widget, once you placed it on the widgets page, lists the front page as it is now.
+
+local POINTS = math.floor(tonumber(options.points) or 50)
+local FEED = "https://hnrss.org/frontpage" .. (POINTS > 0 and ("?points=" .. POINTS) or "")
+local MAX_LINES = math.max(1, math.floor(tonumber(options.lines) or 10))
+
+-- The widgets page asked for this run: it fills the widget and logs nothing.
+local quiet = event and event.name == "widget"
+
+-- Its widget: the first 8 stories of the front page, new or not, each with its points. A tap on a
+-- row opens the story. Only a placed widget is filled, because this reads the feed once more.
+if widget and (quiet or allowed("widget")) then
+  local read, front = pcall(rss.fetch, FEED)
+  if read then
+    local rows = {}
+    for i, item in ipairs(front.items or {}) do
+      if i > 8 then break end
+      local link = (item.link or ""):match("^https?://%S+$")
+      rows[i] = {
+        title = item.title or "(untitled)",
+        trailing = (item.summary or ""):match("Points:%s*(%d+)"),
+        tap = link and { url = link } or nil,
+      }
+    end
+    -- It runs every hour: content counts as old only after two, so the card shows no age between runs.
+    widget.show{ title = "Hacker News", icon = "news", items = rows, empty = "No stories", staleAfter = 2 * 3600 }
+  elseif quiet then
+    error("Couldn't fetch Hacker News: " .. tostring(front), 0)
+  end
+end
+-- A run for the widget stops here. It must not read the new stories: they would count as seen
+-- without ever being logged.
+if quiet then return end
+
+-- rss.fresh raises an error on HTTP failure; catch it so a flaky network
+-- produces one short line instead of a stack trace.
+local ok, feed = pcall(rss.fresh, FEED)
+if not ok then
+  log(fmt.color("bad", "Couldn't fetch Hacker News"), tostring(feed))
+  return
+end
+
+local items = feed.items or {}
+local count = #items
+
+if count == 0 then return end
+
+for i, item in ipairs(items) do
+  if i > MAX_LINES then
+    log(fmt.color("muted", "+" .. (count - MAX_LINES) .. " more"))
+    break
+  end
+  -- hnrss puts the points, the comment count and the discussion's address in each item's summary.
+  -- The title comes first; after it, muted, the points, then the comments as a link of their own.
+  -- A tap anywhere else on the line opens the story. A small space above each story (gap) keeps
+  -- the stories apart when their titles wrap.
+  local about = item.summary or ""
+  local points = tonumber(about:match("Points:%s*(%d+)"))
+  local comments = tonumber(about:match("# Comments:%s*(%d+)"))
+  local discussion = about:match("Comments URL:%s*(https://news%.ycombinator%.com/item%?id=%d+)")
+  local title = item.title or "(untitled)"
+  if points then title = title .. fmt.color("muted", " · " .. points .. (points == 1 and " point" or " points")) end
+  if discussion and discussion ~= item.link then
+    local said = comments and (comments .. (comments == 1 and " comment" or " comments")) or "comments"
+    title = title .. fmt.color("muted", " · ") .. fmt.link(said, discussion)
+  end
+  log(title, { url = item.link, gap = true })
+end
+
+notify("Hacker News", items[1].title or "New story", { url = items[1].link })
