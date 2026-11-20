@@ -30,6 +30,14 @@ off, then or later.
 - `index.json`, published at https://mtwabpin.github.io/kolahal-scripts/index.json, lists every
   script with its checksum. Kolahal reads it, and checks each file against it before installing.
 
+## Keeping your own scripts
+
+You can also keep scripts in a repository of your own, and add and update them whenever you like:
+nobody needs to merge them here. Start from
+[kolahal-scripts-template](https://github.com/mtwabpin/kolahal-scripts-template) (**Use this template**):
+it has the same checks and publishes its own list. Then add it in Kolahal under
+**Scripts → Get more scripts → Sources** (Kolahal 0.5.15 or newer).
+
 ## Sharing a script
 
 See [CONTRIBUTING.md](CONTRIBUTING.md): add your script in its own folder and open a pull request.
