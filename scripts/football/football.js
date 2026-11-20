@@ -97,9 +97,9 @@ function card(event, live, p, every) {
   const [home, away] = ["home", "away"].map((h) => sides(event).find((c) => c.homeAway === h) || {});
   const abbr = (c) => (c.team && c.team.abbreviation) || "?";
   const type = (event.status && event.status.type) || {};
-  const clock = state(event) === "post" ? ["FT", "full time"]
+  const clock = state(event) === "post" ? ["FT", "Full time"]
     : type.shortDetail === "HT" ? ["HT", "half time"]
-    : [(event.status && event.status.displayClock) || "", "minute"];
+    : [(event.status && event.status.displayClock) || "", "Minute"];
   const d = {
     icon: "ball",
     value: `${abbr(home)} ${home.score ?? ""}–${away.score ?? ""} ${abbr(away)}`,
@@ -244,9 +244,9 @@ const shortOf = (c) => (c.team && c.team.abbreviation) || "?";
 const nameOf = (c) => (c.team && c.team.displayName) || shortOf(c);
 if (typeof fmt.stats === "function" && (state(found) === "in" || state(found) === "post")) {
   const type = (found.status && found.status.type) || {};
-  const clock = state(found) === "post" ? ["FT", "full time"]
+  const clock = state(found) === "post" ? ["FT", "Full time"]
     : type.shortDetail === "HT" ? ["HT", "half time"]
-    : [(found.status && found.status.displayClock) || "", "minute"];
+    : [(found.status && found.status.displayClock) || "", "Minute"];
   const numbers = fmt.stats([[`${home.score ?? ""}–${away.score ?? ""}`, `${shortOf(home)} v ${shortOf(away)}`], clock]);
   show([tag, `${nameOf(home)} v ${nameOf(away)}`].filter(Boolean).join(" "), [numbers, bar].filter(Boolean).join("\n"));
 } else {
