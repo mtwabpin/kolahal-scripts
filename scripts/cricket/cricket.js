@@ -164,8 +164,8 @@ function card(event, live, p, every) {
     const toWin = said.match(/(\d+)\s+(?:more\s+)?runs?\b/);
     const balls = said.match(/(\d+)\s+balls?\b/);
     d.more = [];
-    if (toWin) d.more.push({ value: toWin[1], label: "To win" });
-    if (balls) d.more.push({ value: balls[1], label: "Balls left" });
+    if (toWin) d.more.push({ value: toWin[1], label: "to win" });
+    if (balls) d.more.push({ value: balls[1], label: "balls left" });
   }
   return d;
 }
