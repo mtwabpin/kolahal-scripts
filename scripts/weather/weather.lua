@@ -93,7 +93,7 @@ if line == "" then status(place .. ": " .. icon .. " " .. temp) end
 if widget and line == "" then
   widget.show{
     title = place, icon = skyIcon(icon), value = temp, label = sky,
-    more = { { value = humidity, label = "humidity" }, { value = wind, label = "wind" } },
+    more = { { value = humidity, label = "Humidity" }, { value = wind, label = "Wind" } },
     tap = { args = "", page = "log" },
     -- It runs every hour: content counts as old only after two, so the card shows no age between runs.
     staleAfter = 2 * 3600,

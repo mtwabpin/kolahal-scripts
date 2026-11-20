@@ -61,8 +61,8 @@ const placed = widget.show({
   value: repo.stargazers_count,
   label: repo.stargazers_count === 1 ? "star" : "stars",
   more: [
-    { value: repo.forks_count, label: "forks" },
-    { value: repo.open_issues_count, label: "open issues" },
+    { value: repo.forks_count, label: "Forks" },
+    { value: repo.open_issues_count, label: "Open issues" },
   ],
   tap: { url: repo.html_url, label: "Open the project" },
 });
