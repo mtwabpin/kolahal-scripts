@@ -24,7 +24,7 @@ off, then or later.
 - Scripts named `template-…` are starting points: short, commented scripts that show one way of
   working each: a command you type, a timer, an event on the phone, an API key, a fetch, every kind
   of log line, and two widgets. Each comes in Lua and in JavaScript (`-js`).
-- Kolahal's own library is here too: the 47 ready-made scripts that come with the app, such as
+- Kolahal's own library is here too: the 48 ready-made scripts that come with the app, such as
   `weather`, `hn`, `countdown` and `habit`, by Kolahal. They are the same files as in the app's
   **Add script → From the library**, and are updated here when the app's are.
 - `index.json`, published at https://mtwabpin.github.io/kolahal-scripts/index.json, lists every
