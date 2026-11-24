@@ -1,6 +1,6 @@
 # Kolahal scripts
 
-Scripts for [Kolahal](https://github.com/mtwabpin/kolahal), the keyboard-first terminal launcher for
+Scripts for [Kolahal](https://github.com/mtwabpin/kolahal), the touch and type optimized launcher for
 Android, shared by the people who use it. Each one is a single Lua or JavaScript file that runs in
 Kolahal's script sandbox: on a timer, when something happens on the phone, or as a command you type.
 
