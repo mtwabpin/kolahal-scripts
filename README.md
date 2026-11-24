@@ -30,6 +30,18 @@ off, then or later.
 - `index.json`, published at https://mtwabpin.github.io/kolahal-scripts/index.json, lists every
   script with its checksum. Kolahal reads it, and checks each file against it before installing.
 
+## Branches
+
+- `main` holds the scripts for the newest Kolahal that is released. Its list is the one above, which
+  Kolahal reads when there is no list for its own version. Kolahal 0.5.16 and older read only this one.
+- A branch named after a Kolahal version, such as `0.5.17`, holds the scripts for that version. Its
+  list is published as `https://mtwabpin.github.io/kolahal-scripts/0.5.17/index.json`, with its
+  scripts beside it, and that Kolahal reads it first.
+- Scripts for the next Kolahal go on its branch at once, so they are published before it is released.
+  What is merged into `main` meanwhile is merged into that branch too, so its list has it as well.
+  The branch is merged into `main` when that Kolahal is released, and stays, for fixes to the scripts
+  of that version.
+
 ## Keeping your own scripts
 
 You can also keep scripts in a repository of your own, and add and update them whenever you like:

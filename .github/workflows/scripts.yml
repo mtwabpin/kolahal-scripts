@@ -1,10 +1,19 @@
 name: Scripts
 
-# Every pull request: checks each script (tools/check.mjs). Every push to main: the same, then
-# publishes index.json and the scripts on GitHub Pages, where Kolahal reads them.
+# Checks each script (tools/check.mjs) on every pull request, and on every push to main or to a branch
+# named like a Kolahal version, such as 0.5.17.
+#
+# On main, it then publishes the site that Kolahal reads on GitHub Pages (tools/site.mjs):
+# - index.json and the scripts, from main, at the root;
+# - <version>/index.json and its scripts, from each version branch, each checked by its own
+#   tools/check.mjs. That Kolahal reads its folder first, and the root when there is none.
+#
+# GitHub Pages publishes from main only. So a push to a version branch, once its check passes, starts
+# this workflow on main, which publishes every branch. If a version branch fails its check there, the
+# rest is published, that branch keeps the folder published before (if any), and the run fails.
 on:
   push:
-    branches: [main]
+    branches: [main, '[0-9]+.[0-9]+.[0-9]+']
   pull_request:
   workflow_dispatch:
 
@@ -16,7 +25,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Pull requests, and version branches.
   check:
+    if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,20 +39,61 @@ jobs:
       # luac checks Lua syntax; JavaScript is checked by Node itself.
       - run: sudo apt-get update -q && sudo apt-get install -y -q lua5.4
 
-      - name: Check every script, and build the site Kolahal reads
-        run: node tools/check.mjs --out _site
+      - name: Check every script
+        run: node tools/check.mjs
 
-      - if: github.event_name != 'pull_request'
+  # A version branch that passed: publish it, by running this workflow on main. A run started with
+  # GITHUB_TOKEN starts no other run, except a workflow_dispatch, which needs actions: write.
+  publish:
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Publish the site again from main, with this branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "$GITHUB_REF_NAME isn't named like a Kolahal version, such as 0.5.17, so it isn't published."
+            exit 0
+          fi
+          gh workflow run scripts.yml --repo "$GITHUB_REPOSITORY" --ref main
+
+  # main: check it, and build the site from it and from each version branch.
+  site:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      failed: ${{ steps.site.outputs.failed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # every branch
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - run: sudo apt-get update -q && sudo apt-get install -y -q lua5.4
+
+      - id: pages
         uses: actions/configure-pages@v5
 
-      - if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v3
+      # Exit status 2: built, but a version branch failed its check (the deploy job fails after it publishes).
+      - id: site
+        name: Check every script, and build the site from main and each version branch
+        env:
+          LIVE: ${{ steps.pages.outputs.base_url }}
+        run: node tools/site.mjs --out _site --live "$LIVE" || [ $? -eq 2 ]
+
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
   deploy:
-    if: github.event_name != 'pull_request'
-    needs: check
+    needs: site
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -52,3 +104,13 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Fail for each version branch that failed its check
+        if: needs.site.outputs.failed != ''
+        env:
+          FAILED: ${{ needs.site.outputs.failed }}
+        run: |
+          for v in $FAILED; do
+            echo "::error::The $v branch failed its check, so its scripts weren't published: see the site job's log"
+          done
+          exit 1

@@ -16,15 +16,23 @@
    `@secret`, `@option`, `@tags`, and `@requires` with the oldest Kolahal it works with.
    [Describing a script](https://mtwabpin.github.io/kolahal/scripting/overview/#describing-a-script)
    explains each one. [scripts/moon](scripts/moon/moon.lua) is a small example.
-4. Open a pull request. The check runs on it, and someone reads the code before it is merged.
-   By opening one, you share your script under the [MIT license](LICENSE), like everything here.
+4. Open a pull request against `main`. The check runs on it, and someone reads the code before it is
+   merged. By opening one, you share your script under the [MIT license](LICENSE), like everything here.
+
+A script that needs a Kolahal that isn't released yet (its `@requires` is newer than the newest
+release) goes to the branch of that version, such as `0.5.17`: open the pull request against it.
+It is published from there for that Kolahal, and reaches `main` when that Kolahal is released. A fix
+for the scripts of an older Kolahal goes to its branch, and to `main` if `main` has the same script.
+The [README](README.md#branches) says what each branch is.
 
 To update a script, change it and raise its `@version`: Kolahal offers the update to everyone who
 has it and hasn't edited their copy.
 
 ## What the check looks for
 
-You can run it yourself with `node tools/check.mjs` (and `luac` for Lua syntax).
+You can run it yourself with `node tools/check.mjs` (and `luac` for Lua syntax). Each branch has its
+own, with the rules of its Kolahal version. `node tools/site.mjs --out <folder> --local` builds the
+whole site, a folder for each version branch, as GitHub publishes it.
 
 - One script per folder, named after the folder.
 - `@title`, `@desc`, `@author` and `@version` lines.
