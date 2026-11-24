@@ -1,7 +1,7 @@
 // @title Live chess
 // @desc Live chess from Lichess broadcasts: the event option's game as its status line, to pin at the top of home; chess games lists the rounds
 // @author Kolahal
-// @version 1.0
+// @version 1.1
 // @command
 // @usage [now|games|board|live|<player>]
 // @widget stat 4x1
@@ -28,7 +28,7 @@
 // every broadcast on now.
 //
 // Its widget, once you placed it on the widgets page, is the game: the last move large, the
-// players and the round under it, and both clocks beside it. While the page shows it, it is
+// players under it, and both clocks beside it. While the page shows it, it is
 // fetched again every refresh seconds. A tap shows the game in the log.
 
 const API = "https://lichess.org";
@@ -37,15 +37,20 @@ const want = (options.event || "top").trim();
 const followsTop = want.toLowerCase() === "top";
 const player = (options.player || "any").trim();
 const every = Math.max(30, Number(options.refresh) || 60);
+// A followed game is kept for the event and player options it was found with.
+const following = `${want}|${player}`;
 
+// A second or later widget has options of its own, so it keeps its own game, in keys of its own,
+// and leaves the status line to the script's own options.
+const slot = event && event.instance ? `.${event.instance}` : "";
 const read = (key) => {
   try {
-    return JSON.parse(store.get(key) || "null");
+    return JSON.parse(store.get(key + slot) || "null");
   } catch (e) {
     return null;
   }
 };
-const keep = (key, value) => store.set(key, value == null ? null : JSON.stringify(value));
+const keep = (key, value) => store.set(key + slot, value == null ? null : JSON.stringify(value));
 
 // An error with words for the log: its first line, then a hint.
 const said = (text) => Object.assign(new Error(text), { lichess: true });
@@ -131,7 +136,7 @@ async function locate(who, onlyLive) {
   const found = data && pick(data.games || [], who);
   if (!found || (onlyLive && found.status !== "*")) return { t, g: null };
   // A match's score, from Lichess's players: it counts a game once it has ended.
-  const game = { for: want, event: t.tour.name, name: data.round.name, round: data.round.id, game: found.id, counted: found.status !== "*" };
+  const game = { for: following, event: t.tour.name, name: data.round.name, round: data.round.id, game: found.id, counted: found.status !== "*" };
   if (isMatch(t.tour)) {
     game.score = {};
     for (const p of (await get(`/broadcast/${t.tour.id}/players`, true)) || []) game.score[p.name] = p.score || 0;
@@ -192,12 +197,13 @@ function when(ms) {
 // A tap on its widget shows the game in the log.
 const TAP = { args: "now", page: "log", label: "The game" };
 
-// Its widget for a game: the last move large (the result once it ends), the players and the round
-// under it, and beside it both clocks while it's on, and the match score in a match.
+// Its widget for a game: the last move large (the result once it ends), the players under it, and
+// beside it both clocks while it's on, and the match score in a match. The side to move is left to
+// the last move: a narrow card cuts a label at about nine letters.
 function card(g, game) {
   const on = live(g);
-  const d = { icon: "♞", value: state(g), label: `${pair(g)} · ${game.name}`, tap: TAP, staleAfter: on ? 60 : 900 };
-  const more = on ? [0, 1].map((i) => ({ value: clock(g, i), label: short(side(g, i)) + (i === toMove(g) ? " to move" : "") })) : [];
+  const d = { icon: "♞", value: state(g), label: pair(g), tap: TAP, staleAfter: on ? 60 : 900 };
+  const more = on ? [0, 1].map((i) => ({ value: clock(g, i), label: short(side(g, i)) })) : [];
   const s = score(g, game);
   if (s) more.push({ value: s, label: "Match" });
   if (more.length) d.more = more;
@@ -210,14 +216,14 @@ function card(g, game) {
 
 // Its status line and widget: the game's line, run again every refresh seconds while it's on.
 function showGame(g, game) {
-  if (live(g)) status(line(g), { refresh: every });
-  else status(line(g));
+  if (!slot && live(g)) status(line(g), { refresh: every });
+  else if (!slot) status(line(g));
   widget.show(card(g, game));
 }
 
 // No game to follow: no status line, and its widget says when the next round starts.
 function showNone(t) {
-  status(null);
+  if (!slot) status(null);
   const r = t && nextRound(t);
   widget.show({ icon: "♞", value: "–", label: r ? `${r.name}: ${when(r.startsAt)}` : "No live game", tap: TAP, staleAfter: 900 });
 }
@@ -249,7 +255,7 @@ function follow(at) {
 
 const words = (argline || "").trim();
 const kept = read("game");
-const game = kept && kept.for === want ? kept : null;
+const game = kept && kept.for === following ? kept : null;
 
 if (event && event.name === "refresh") {
   // A failed fetch leaves the line as it was until the next refresh.
@@ -272,12 +278,12 @@ if (!words) {
       const g = await update(game);
       if (g && live(g)) return;
     }
-    const memo = read("event");
-    if (!game && !followsTop && memo && memo.for === want && memo.next && Date.now() < memo.next - 15 * 60000) return;
+    const next = read("next");
+    if (!game && next && next.for === following && Date.now() < next.at - 15 * 60000) return;
     const at = await locate(player, true);
     if (at.g && (!game || at.game.game !== game.game)) follow(at);
     else if (!game) {
-      if (at.t && !followsTop) keep("event", { for: want, id: at.t.tour.id, next: (nextRound(at.t) || {}).startsAt || null });
+      if (at.t && !followsTop) keep("next", { for: following, at: (nextRound(at.t) || {}).startsAt || 0 });
       showNone(at.t);
     }
   } catch (e) {
@@ -299,7 +305,7 @@ async function showLive() {
   const top = (await get("/api/broadcast/top", true)) || {};
   const on = (top.active || []).filter((b) => b.round && b.round.ongoing);
   if (!on.length) return show(fmt.color("muted", "No broadcasts on Lichess now"));
-  const rows = on.map((b) => [cut(b.tour.name, 34), b.round.name]);
+  const rows = on.map((b) => [cut(b.tour.name, 24), b.round.name]);
   show(`${on.length} broadcasts on`, `${fmt.table(rows)}\n'script set chess event <words>' follows one`);
 }
 
@@ -325,8 +331,9 @@ async function showRounds() {
     if (r.ongoing) return [r.name, m ? `${who}, live` : "On now"];
     return [r.name, r.finished ? "Finished" : cap(when(r.startsAt))];
   });
-  const names = Object.keys(points);
-  const big = names.length === 2 ? fmt.stats(names.map((n) => [half(points[n]), short({ name: n })])) : "";
+  // The match score as one figure, so neither side is drawn larger.
+  const [a, b, more] = Object.keys(points);
+  const big = b && !more ? fmt.stats([[`${half(points[a])}–${half(points[b])}`, `${short({ name: a })} v ${short({ name: b })}`]]) : "";
   show(t.tour.name, [big, fmt.table(rows)].filter(Boolean).join("\n"), { url: t.tour.url });
 }
 
