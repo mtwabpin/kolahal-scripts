@@ -77,8 +77,37 @@ const SCREEN_REFUSES = ['every', 'at', 'on', 'widget'];
 const GIVES_NAME = /^[a-z][a-z0-9_-]{0,19}$/;
 const GIVES_MAX = 8;
 // As Kolahal's WidgetKind.forScripts and WidgetSize: `@widget <kind> [<size>]`.
-const WIDGET_KINDS = ['stat', 'text', 'list', 'progress', 'chart', 'countdown', 'buttons', 'toggles', 'clock', 'agenda', 'image'];
+const WIDGET_KINDS = ['stat', 'text', 'list', 'progress', 'chart', 'countdown', 'buttons', 'toggles', 'clock', 'agenda', 'image', 'versus', 'sky'];
 const WIDGET_SIZES = ['1x1', '2x1', '2x2', '4x1', '4x2', '4x4'];
+// As Kolahal's WidgetKind.sizes: the sizes each kind is made for. Kolahal takes any of WIDGET_SIZES on the
+// line, so another one is a warning, not an error.
+const WIDGET_SIZES_OF = {
+  stat: ['1x1', '2x1', '2x2', '4x1'],
+  text: ['2x1', '2x2', '4x1', '4x2'],
+  list: ['2x2', '4x2', '4x4'],
+  progress: ['1x1', '2x1', '2x2', '4x1', '4x2'],
+  chart: ['2x1', '2x2', '4x2'],
+  countdown: ['1x1', '2x1', '2x2'],
+  buttons: ['2x1', '2x2', '4x1', '4x2'],
+  toggles: ['2x1', '2x2', '4x1'],
+  clock: ['2x1', '2x2', '4x1'],
+  agenda: ['2x2', '4x2', '4x4'],
+  image: ['2x1', '2x2', '4x2', '4x4'],
+  versus: ['2x1', '2x2', '4x1', '4x2'],
+  sky: ['2x1', '2x2'],
+};
+// Widgets of Kolahal 0.5.17: the versus and sky kinds, a progress widget's gauge, rings and stages, and a
+// stat's scene, each found in the code with its kind or field. A stat's `points` and a bar's `unit` and
+// `moving` are 0.5.17's too, but their names are also older fields' (a chart's points), so they aren't looked for.
+const WIDGETS_SINCE = '0.5.17';
+const NOT_DECLARED = '(?<!\\b(?:local|const|let|var)\\s+)(?<![.\\w$])["\']?';
+const WIDGETS_NEW = [
+  [new RegExp(`${NOT_DECLARED}kind["']?\\s*[:=]\\s*["'\`]\\s*versus\\s*["'\`]`, 'i'), 'a versus widget'],
+  [new RegExp(`${NOT_DECLARED}kind["']?\\s*[:=]\\s*["'\`]\\s*sky\\s*["'\`]`, 'i'), 'a sky widget'],
+  [new RegExp(`${NOT_DECLARED}style["']?\\s*[:=]\\s*["'\`]\\s*(gauge|rings)\\s*["'\`]`, 'i'), 'a progress widget\'s gauge or rings'],
+  [new RegExp(`${NOT_DECLARED}stages["']?\\s*[:=](?!=)`), 'a progress widget\'s stages'],
+  [new RegExp(`${NOT_DECLARED}scene["']?\\s*[:=](?!=)`), 'a stat\'s scene'],
+];
 
 const directive = (code, name) => {
   const m = code.match(new RegExp(`^\\s*(--|//)\\s*@${name}\\b[ \\t]*(.*)$`, 'm'));
@@ -127,6 +156,7 @@ function syntaxError(path, lang, code) {
 
 function check(dir) {
   const problems = [];
+  const warnings = [];
   const files = readdirSync(join('scripts', dir)).filter((f) => /\.(lua|js)$/.test(f));
   if (!NAME.test(dir)) problems.push('folder name: lowercase letters, digits, - and _ only, up to 40');
   if (RESERVED.includes(dir)) problems.push(`folder name: ${dir} is a Kolahal command, so Kolahal doesn't install a script of that name`);
@@ -176,8 +206,19 @@ function check(dir) {
   const widget = directive(code, 'widget');
   if (widget !== null) {
     const [kind = '', size] = widget.split(/\s+/);
-    if (!WIDGET_KINDS.includes(kind.toLowerCase())) problems.push(`@widget ${kind}: not a kind of widget (${WIDGET_KINDS.join(', ')})`);
-    else if (size && !WIDGET_SIZES.includes(size.toLowerCase().replace('×', 'x'))) problems.push(`@widget ${kind} ${size}: not a size (${WIDGET_SIZES.join(', ')})`);
+    const k = kind.toLowerCase();
+    const s = (size ?? '').toLowerCase().replace('×', 'x');
+    if (!WIDGET_KINDS.includes(k)) problems.push(`@widget ${kind}: not a kind of widget (${WIDGET_KINDS.join(', ')})`);
+    else if (size && !WIDGET_SIZES.includes(s)) problems.push(`@widget ${kind} ${size}: not a size (${WIDGET_SIZES.join(', ')})`);
+    else if (size && !WIDGET_SIZES_OF[k].includes(s)) warnings.push(`@widget ${kind} ${size}: ${k} is made for ${WIDGET_SIZES_OF[k].join(', ')}; Kolahal draws it at ${s} all the same`);
+    // A kind or field of 0.5.17's widgets: an older Kolahal stops widget.show with an error.
+    const found = [
+      ...(['versus', 'sky'].includes(k) ? [`a ${k} widget`] : []),
+      ...WIDGETS_NEW.filter(([re]) => re.test(body)).map(([, what]) => what),
+    ];
+    if (found.length && !(requires && VERSION.test(requires) && !older(requires, WIDGETS_SINCE))) {
+      problems.push(`uses ${[...new Set(found)].join(', ')}, so it needs "@requires ${WIDGETS_SINCE}" or newer`);
+    }
   }
   // API keys: named with @secret, sent only to a site it names, read with secrets.get.
   const secrets = [...code.matchAll(/^\s*(--|\/\/)\s*@secret\b(.*)$/gm)].map((m) => m[2].trim().split(/\s+/));
@@ -232,6 +273,7 @@ function check(dir) {
 
   return {
     problems,
+    warnings,
     entry: {
       name: dir,
       lang,
@@ -444,7 +486,8 @@ const dirs = folders('scripts');
 let failed = false;
 const entries = [];
 for (const dir of dirs) {
-  const { problems, entry } = check(dir);
+  const { problems, warnings, entry } = check(dir);
+  for (const w of warnings ?? []) console.log(`::warning file=scripts/${dir}::${dir}: ${w}`);
   if (problems.length) {
     failed = true;
     for (const p of problems) console.log(`::error file=scripts/${dir}::${dir}: ${p}`);

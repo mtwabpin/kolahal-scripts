@@ -82,6 +82,10 @@ whole site, a folder for each version branch, as GitHub publishes it.
 - For values that shaders follow: a `@gives` line naming each value that `shader.give` gives, at most 8.
 - `@requires 0.5.17` or newer for `@uses screen`, `@uses effects` or `@gives`.
 - A `@widget` line names a kind of widget and a size that Kolahal has, such as `@widget stat 2x1`.
+  A size the kind isn't made for (`@widget sky 4x4`) is only a warning: Kolahal draws it all the same.
+- `@requires 0.5.17` or newer for a `versus` or `sky` widget, a `progress` widget's `gauge`, `rings`
+  or `stages`, and a `stat`'s `scene`. A `stat`'s `points` needs it too, though the check can't tell
+  them from a chart's.
 - No syntax errors, at most 64 KB, and no line longer than 300 characters.
 
 ## What a reviewer looks for
