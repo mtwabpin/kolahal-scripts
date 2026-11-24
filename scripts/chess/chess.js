@@ -1,13 +1,13 @@
 // @title Live chess
 // @desc Live chess from Lichess broadcasts: the event option's game as its status line, to pin at the top of home; chess games lists the rounds
 // @author Kolahal
-// @version 1.1
+// @version 1.2
 // @command
 // @usage [now|games|board|live|<player>]
 // @widget stat 4x1
 // @every 15m
 // @tags sport, chess, live
-// @requires 0.5.8
+// @requires 0.5.17
 // @option event top The broadcast it follows: top, the highest-ranked one on now, or words from its name, such as "world championship"
 // @option player any The player whose game it follows, such as Gukesh; any: the first board on
 // @option refresh 60 Seconds between updates while home shows the game (30 at the fastest)
