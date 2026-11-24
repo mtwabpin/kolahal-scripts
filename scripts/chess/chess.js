@@ -1,10 +1,10 @@
 // @title Live chess
 // @desc Live chess from Lichess broadcasts: the event option's game as its status line, to pin at the top of home; chess games lists the rounds
 // @author Kolahal
-// @version 1.2
+// @version 1.3
 // @command
 // @usage [now|games|board|live|<player>]
-// @widget stat 4x1
+// @widget versus 4x1
 // @every 15m
 // @tags sport, chess, live
 // @requires 0.5.17
@@ -27,9 +27,11 @@
 // `chess games` lists the event's rounds with their results or start times, and `chess live` lists
 // every broadcast on now.
 //
-// Its widget, once you placed it on the widgets page, is the game: the last move large, the
-// players under it, and both clocks beside it. While the page shows it, it is
-// fetched again every refresh seconds. A tap shows the game in the log.
+// Its widget, once you placed it on the widgets page, is the game: the two players with their
+// initials, white first, and the last move large between them, or in a match the match score with
+// the last move under it. While the game is on, both clocks are the bar between the players, the
+// running one moving, with a dot by the player to move. While the page shows it, it is fetched again
+// every refresh seconds. A tap shows the game in the log.
 
 const API = "https://lichess.org";
 const RESULT_HOURS = 2;
@@ -165,11 +167,18 @@ function lastMove(g) {
 const state = (g) => (live(g) ? lastMove(g) : g.status);
 const line = (g) => `${pair(g)} · ${state(g)}`;
 
-// A player's clock, "1:18:08" or "47:45": the side to move's counts the time it has thought since.
-function clock(g, i) {
+// A player's time left in seconds, null when Lichess has none: the side to move's counts the time it
+// has thought since.
+function secondsLeft(g, i) {
   const c = side(g, i).clock;
-  if (c == null) return "–";
-  const s = Math.max(0, Math.floor(c / 100) - (live(g) && i === toMove(g) ? g.thinkTime || 0 : 0));
+  if (c == null) return null;
+  return Math.max(0, Math.floor(c / 100) - (live(g) && i === toMove(g) ? g.thinkTime || 0 : 0));
+}
+
+// A player's clock, "1:18:08" or "47:45".
+function clock(g, i) {
+  const s = secondsLeft(g, i);
+  if (s == null) return "–";
   const h = Math.floor(s / 3600);
   return h ? `${h}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}` : `${Math.floor(s / 60)}:${pad(s % 60)}`;
 }
@@ -197,17 +206,47 @@ function when(ms) {
 // A tap on its widget shows the game in the log.
 const TAP = { args: "now", page: "log", label: "The game" };
 
-// Its widget for a game: the last move large (the result once it ends), the players under it, and
-// beside it both clocks while it's on, and the match score in a match. The side to move is left to
-// the last move: a narrow card cuts a label at about nine letters.
+// A player's mark on the card: the initials, the given name's first ("Carlsen, Magnus" is MC, "Lopez
+// Rayo, Sergio" SL); a name without a comma, its first and last words' ("Gukesh D" is GD). Two
+// players with the same initials get the first two letters of their surnames instead.
+const initials = (p) => {
+  const [surname = "", given = ""] = (p.name || "").split(",").map((s) => s.trim());
+  const words = surname.split(/\s+/).filter(Boolean);
+  const two = given ? [given, surname] : words.length > 1 ? [words[0], words[words.length - 1]] : [surname];
+  return two.map((w) => w.charAt(0)).join("").toUpperCase();
+};
+function marks(g) {
+  const m = [0, 1].map((i) => initials(side(g, i)));
+  return m[0] !== m[1] ? m : [0, 1].map((i) => short(side(g, i)).slice(0, 2));
+}
+
+// Its widget for a game: the players, white first, each with its initials; between them the last move
+// large (the result once it ends), or in a match the match score, with the last move as the line
+// under it. LIVE or RESULT at the top. While it's on: both clocks as the bar between the players (the
+// time each has left), the running one moving, and a dot by the player to move.
 function card(g, game) {
   const on = live(g);
-  const d = { icon: "♞", value: state(g), label: pair(g), tap: TAP, staleAfter: on ? 60 : 900 };
-  const more = on ? [0, 1].map((i) => ({ value: clock(g, i), label: short(side(g, i)) })) : [];
   const s = score(g, game);
-  if (s) more.push({ value: s, label: "Match" });
-  if (more.length) d.more = more;
+  const mark = marks(g);
+  const left = [0, 1].map((i) => secondsLeft(g, i));
+  const clocks = on && left.every((n) => n != null);
+  const d = {
+    kind: "versus",
+    icon: "♞",
+    score: s || state(g),
+    sides: [0, 1].map((i) => ({
+      name: short(side(g, i)),
+      ...(mark[i] ? { mark: mark[i] } : {}),
+      ...(clocks ? { value: left[i], text: clock(g, i) } : {}),
+    })),
+    badge: on ? "LIVE" : "RESULT",
+    tap: TAP,
+    staleAfter: on ? 60 : 900,
+  };
+  if (s) d.line = state(g);
   if (on) {
+    d.turn = toMove(g) + 1;
+    d.moving = true;
     d.color = "good";
     d.refresh = every;
   }
@@ -221,11 +260,11 @@ function showGame(g, game) {
   widget.show(card(g, game));
 }
 
-// No game to follow: no status line, and its widget says when the next round starts.
+// No game to follow: no status line, and its widget says when the next round starts, as one big value.
 function showNone(t) {
   if (!slot) status(null);
   const r = t && nextRound(t);
-  widget.show({ icon: "♞", value: "–", label: r ? `${r.name}: ${when(r.startsAt)}` : "No live game", tap: TAP, staleAfter: 900 });
+  widget.show({ kind: "stat", icon: "♞", value: "–", label: r ? `${r.name}: ${when(r.startsAt)}` : "No live game", tap: TAP, staleAfter: 900 });
 }
 
 // Fetches the followed game again: its line while it's on, its result for a while after.
