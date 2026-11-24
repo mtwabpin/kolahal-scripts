@@ -13,26 +13,46 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSyn
 import { join } from 'node:path';
 
 // As Kolahal's ScriptMeta: what `@uses` and `@on` may name.
-const USES = ['notifications', 'clipboard', 'apps', 'commands', 'dnd', 'work', 'todos', 'notes', 'reminders', 'calendar', 'feeds', 'usage'];
+const USES = ['notifications', 'clipboard', 'apps', 'commands', 'dnd', 'work', 'todos', 'notes', 'reminders', 'calendar', 'feeds', 'usage', 'screen', 'effects'];
 const EVENTS = ['unlock', 'charger', 'unplug', 'wifi', 'offline', 'notification', 'boot', 'headset'];
+// As Kolahal's ScriptCheck: every `@` line a script's header may have. Any other is a typo (`@evrey`).
+const DIRECTIVES = ['command', 'desc', 'usage', 'on', 'uses', 'secret', 'option', 'title', 'author', 'version', 'tags', 'every', 'at', 'notify', 'requires', 'widget', 'gives'];
 const NAME = /^[a-z0-9_-]{1,40}$/;
+// As Kolahal 0.5.17's CommandCatalog.RESERVED_NAMES: the built-in commands and their other names. Kolahal
+// doesn't install a script of one of these names. Each version branch has the list of its Kolahal.
+const RESERVED = [
+  'activity', 'agenda', 'alarm', 'alarms', 'alias', 'allow', 'apps', 'backup', 'bluetooth', 'boot', 'brightness',
+  'bt', 'cal', 'call', 'calls', 'clear', 'clock', 'cls', 'config', 'contact', 'contacts', 'crashes', 'data', 'date',
+  'decode', 'dial', 'dnd', 'echo', 'edit', 'fastfetch', 'fav', 'favs', 'feed', 'feeds', 'fetch', 'font', 'fresh', 'g',
+  'help', 'hide', 'history', 'home', 'info', 'installs', 'js', 'launch', 'lock', 'log', 'ls', 'lua', 'map', 'maps',
+  'matrix', 'media', 'mp', 'neofetch', 'next', 'nfc', 'note', 'notes', 'notifications', 'notifs', 'open', 'pin',
+  'pins', 'pipes', 'play', 'prefs', 'prev', 'private', 'reboot', 'remind', 'reminders', 'rename', 'restart', 'ring',
+  'rotate', 'rss', 'scramble', 'screen', 'screen-timeout', 'screentime', 'script', 'scripts', 'search', 'set',
+  'settings', 'setup', 'shade', 'shader', 'shortcuts', 'sl', 'sms', 'source', 'status', 'stopwatch', 'storage',
+  'store', 'system', 'text', 'theme', 'time', 'timer', 'todo', 'toggles', 'top', 'torch', 'tour', 'unalias', 'unfav',
+  'unhide', 'uninstall', 'unlocks', 'unpin', 'update', 'updates', 'url', 'usage', 'vol', 'volume', 'wallpaper', 'web',
+  'widget', 'widgets', 'wifi', 'wiki', 'work', 'youtube', 'yt',
+];
 const VERSION = /^\d+(\.\d+){0,2}$/;
 const MAX_BYTES = 64 * 1024;
 const MAX_LINE = 300; // longer lines are usually minified code, which nobody can review
-// Calls Kolahal stops unless the script declares them with `@uses`.
+// As Kolahal's ScriptCheck.NEEDS: calls Kolahal stops unless the script declares them with `@uses`.
+// Comment lines are left out, as a note about a call is not one.
 const NEEDS = [
-  [/\bapps\.list\s*\(/, 'apps', 'apps.list()'],
-  [/\bclipboard\.(get|set)\s*\(/, 'clipboard', 'clipboard.get() or .set()'],
-  [/\bnotifications\.recent\s*\(/, 'notifications', 'notifications.recent()'],
-  [/\blauncher\.run\s*\(/, 'commands', 'launcher.run()'],
-  [/\bdevice\.(dnd|setDnd)\s*\(/, 'dnd', 'device.dnd() or .setDnd()'],
-  [/\bdevice\.(work|setWork)\s*\(/, 'work', 'device.work() or .setWork()'],
-  [/\btodos\.(list|setDone)\s*\(/, 'todos', 'todos.list() or .setDone()'],
-  [/\bnotes\.list\s*\(/, 'notes', 'notes.list()'],
-  [/\breminders\.list\s*\(/, 'reminders', 'reminders.list()'],
-  [/\bcalendar\.events\s*\(/, 'calendar', 'calendar.events()'],
-  [/\bfeeds\.unread\s*\(/, 'feeds', 'feeds.unread()'],
-  [/\busage\.(today|days|data|unused)\s*\(/, 'usage', 'usage.today(), .days(), .data() or .unused()'],
+  [/(?<![.\w])notifications\s*\.\s*recent\b/, 'notifications', 'notifications.recent()'],
+  [/(?<![.\w])clipboard\s*\.\s*\w+/, 'clipboard', 'clipboard.get() or .set()'],
+  [/(?<![.\w])apps\s*\.\s*list\b/, 'apps', 'apps.list()'],
+  [/(?<![.\w])launcher\s*\.\s*run\b/, 'commands', 'launcher.run()'],
+  [/(?<![.\w])device\s*\.\s*(dnd|setDnd)\b/, 'dnd', 'device.dnd() or .setDnd()'],
+  [/(?<![.\w])device\s*\.\s*(work|setWork)\b/, 'work', 'device.work() or .setWork()'],
+  [/(?<![.\w])todos\s*\.\s*(list|setDone)\b/, 'todos', 'todos.list() or .setDone()'],
+  [/(?<![.\w])notes\s*\.\s*list\b/, 'notes', 'notes.list()'],
+  [/(?<![.\w])reminders\s*\.\s*list\b/, 'reminders', 'reminders.list()'],
+  [/(?<![.\w])calendar\s*\.\s*events\b/, 'calendar', 'calendar.events()'],
+  [/(?<![.\w])feeds\s*\.\s*unread\b/, 'feeds', 'feeds.unread()'],
+  [/(?<![.\w])usage\s*\.\s*(today|days|data|summary|unused)\b/, 'usage', 'usage.today(), .days(), .data(), .summary() or .unused()'],
+  [/(?<![.\w])tty\s*\.\s*screen\b/, 'screen', 'tty.screen()'],
+  [/(?<![.\w])shader\s*\.\s*play\b/, 'effects', 'shader.play()'],
 ];
 const REQUIRED = ['title', 'desc', 'author', 'version'];
 // As Kolahal's ScriptMeta.secrets: `@secret NAME site[,site] description`.
@@ -46,6 +66,18 @@ const DEVICE_SINCE = '0.4.4';
 // As Kolahal's ScriptMeta.options: `@option name default description`, read as options.name.
 const OPTION_NAME = /^[A-Za-z][A-Za-z0-9_]{0,31}$/;
 const OPTIONS_SINCE = '0.4.7';
+// A full-screen screen of its own (`@uses screen`, tty.screen), one-off shaders (`@uses effects`,
+// shader.play) and values for shaders (`@gives`, shader.give).
+const SCREEN_SINCE = '0.5.17';
+// As Kolahal's ScriptMeta.isScreen and ScriptCheck.SCREEN_REFUSES: a script with a screen of its own runs
+// only when you start it, so these lines would count for nothing in it.
+const SCREEN_REFUSES = ['every', 'at', 'on', 'widget'];
+// As Kolahal's ShaderValues: a value's name on a `@gives` line, and how many a script may give.
+const GIVES_NAME = /^[a-z][a-z0-9_-]{0,19}$/;
+const GIVES_MAX = 8;
+// As Kolahal's WidgetKind.forScripts and WidgetSize: `@widget <kind> [<size>]`.
+const WIDGET_KINDS = ['stat', 'text', 'list', 'progress', 'chart', 'countdown', 'buttons', 'toggles', 'clock', 'agenda', 'image'];
+const WIDGET_SIZES = ['1x1', '2x1', '2x2', '4x1', '4x2', '4x4'];
 
 const directive = (code, name) => {
   const m = code.match(new RegExp(`^\\s*(--|//)\\s*@${name}\\b[ \\t]*(.*)$`, 'm'));
@@ -96,6 +128,7 @@ function check(dir) {
   const problems = [];
   const files = readdirSync(join('scripts', dir)).filter((f) => /\.(lua|js)$/.test(f));
   if (!NAME.test(dir)) problems.push('folder name: lowercase letters, digits, - and _ only, up to 40');
+  if (RESERVED.includes(dir)) problems.push(`folder name: ${dir} is a Kolahal command, so Kolahal doesn't install a script of that name`);
   if (files.length !== 1) return { problems: [...problems, `one .lua or .js file per folder, found ${files.length}`] };
   const file = files[0];
   const lang = file.endsWith('.js') ? 'js' : 'lua';
@@ -107,7 +140,11 @@ function check(dir) {
   // Kolahal (Android) also breaks lines at \v, \f, U+0085, U+2028 and U+2029: a directive hidden behind
   // one would be read by the app and missed here, so only \n and \r\n are allowed.
   if (/[\v\f\u0085\u2028\u2029]|\r(?!\n)/.test(code)) problems.push('line breaks: only \\n or \\r\\n (no \\v, \\f, U+0085, U+2028, U+2029 or a lone \\r)');
+  // The code with its comment lines emptied: a note about `options.x` or `tty.screen` is not a use of it.
+  const body = code.split('\n').map((line) => (/^\s*(--|\/\/)/.test(line) ? '' : line)).join('\n');
   for (const name of REQUIRED) if (!directive(code, name)) problems.push(`needs a @${name} line`);
+  const named = [...code.matchAll(/^\s*(--|\/\/)\s*@(\w+)\b/gm)].map((m) => m[2]);
+  for (const name of new Set(named)) if (!DIRECTIVES.includes(name)) problems.push(`@${name}: not a line Kolahal reads (${DIRECTIVES.map((d) => `@${d}`).join(', ')})`);
   const version = directive(code, 'version');
   if (version && !VERSION.test(version)) problems.push(`@version ${version}: use numbers like 1.2`);
   const requires = directive(code, 'requires');
@@ -116,8 +153,31 @@ function check(dir) {
   const on = allLines(code, 'on');
   for (const u of uses) if (!USES.includes(u)) problems.push(`@uses ${u}: not something a script can ask for (${USES.join(', ')})`);
   for (const e of on) if (!EVENTS.includes(e)) problems.push(`@on ${e}: not an event (${EVENTS.join(', ')})`);
-  for (const [call, what, shown] of NEEDS) if (call.test(code) && !uses.includes(what)) problems.push(`calls ${shown} but has no "@uses ${what}"`);
+  for (const [call, what, shown] of NEEDS) if (call.test(body) && !uses.includes(what)) problems.push(`calls ${shown} but has no "@uses ${what}"`);
   if (on.includes('notification') && !uses.includes('notifications')) problems.push('@on notification needs "@uses notifications"');
+  // A full-screen screen of its own: a command, and nothing else.
+  const screen = uses.includes('screen');
+  if (screen) {
+    for (const name of SCREEN_REFUSES) if (has(code, name)) problems.push(`@${name} doesn't work with @uses screen: a script that draws a full screen runs only when you start it`);
+  }
+  // Values for shaders: each name on a @gives line, and each one shader.give names declared there.
+  const gives = allLines(code, 'gives');
+  for (const g of gives) if (!GIVES_NAME.test(g)) problems.push(`@gives ${g}: a name like rain (small letters, digits, - and _, up to 20)`);
+  if (new Set(gives).size > GIVES_MAX) problems.push(`@gives: at most ${GIVES_MAX} values`);
+  for (const m of body.matchAll(/(?<![.\w])shader\s*\.\s*give\s*\(\s*["'`]([^"'`]*)["'`]/g)) {
+    if (!gives.includes(m[1].toLowerCase())) problems.push(`calls shader.give("${m[1]}") but has no "@gives ${m[1].toLowerCase()}"`);
+  }
+  if (/(?<![.\w])shader\s*\.\s*give\b/.test(body) && !gives.length) problems.push('calls shader.give() but has no @gives line');
+  if ((screen || uses.includes('effects') || has(code, 'gives')) && !(requires && VERSION.test(requires) && !older(requires, SCREEN_SINCE))) {
+    problems.push(`uses screen, effects or @gives, so it needs "@requires ${SCREEN_SINCE}" or newer`);
+  }
+  // As Kolahal's ScriptCheck: the first @widget line names a kind a script can fill, and maybe its size.
+  const widget = directive(code, 'widget');
+  if (widget !== null) {
+    const [kind = '', size] = widget.split(/\s+/);
+    if (!WIDGET_KINDS.includes(kind.toLowerCase())) problems.push(`@widget ${kind}: not a kind of widget (${WIDGET_KINDS.join(', ')})`);
+    else if (size && !WIDGET_SIZES.includes(size.toLowerCase().replace('×', 'x'))) problems.push(`@widget ${kind} ${size}: not a size (${WIDGET_SIZES.join(', ')})`);
+  }
   // API keys: named with @secret, sent only to a site it names, read with secrets.get.
   const secrets = [...code.matchAll(/^\s*(--|\/\/)\s*@secret\b(.*)$/gm)].map((m) => m[2].trim().split(/\s+/));
   for (const [name = '', hosts = '', ...desc] of secrets) {
@@ -152,7 +212,6 @@ function check(dir) {
     else if (!desc) problems.push(`@option ${name}: add a few words saying what it sets`);
     optionNames.push(name);
   }
-  const body = code.split('\n').filter((line) => !/^\s*(--|\/\/)/.test(line)).join('\n');
   const read = [...new Set([...body.matchAll(/\boptions\.(\w+)/g)].map((m) => m[1]))];
   for (const name of read) if (!optionNames.includes(name)) problems.push(`reads options.${name} but has no "@option ${name} <default> <description>"`);
   if ((options.length || read.length) && !(requires && VERSION.test(requires) && !older(requires, OPTIONS_SINCE))) {
@@ -183,7 +242,8 @@ function check(dir) {
       tags: (directive(code, 'tags') ?? '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
       uses: USES.filter((u) => uses.includes(u)),
       on: EVENTS.filter((e) => on.includes(e)),
-      command: has(code, 'command'),
+      // One with a screen of its own is a command, as Kolahal reads it.
+      command: has(code, 'command') || screen,
       every: every ? interval(every) : null,
       at: at.map(clock).filter(Boolean),
       notify: has(code, 'notify'),

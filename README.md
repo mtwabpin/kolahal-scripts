@@ -23,10 +23,12 @@ off, then or later.
   lists them all.
 - Scripts named `template-…` are starting points: short, commented scripts that show one way of
   working each: a command you type, a timer, an event on the phone, an API key, a fetch, every kind
-  of log line, and two widgets. Each comes in Lua and in JavaScript (`-js`).
-- Kolahal's own library is here too: the 48 ready-made scripts that come with the app, such as
+  of log line, two widgets, and a full screen of its own (`template-screen`, Kolahal 0.5.17). Each
+  comes in Lua and in JavaScript (`-js`).
+- Kolahal's own library is here too: the 57 ready-made scripts that come with the app, such as
   `weather`, `hn`, `countdown` and `habit`, by Kolahal. They are the same files as in the app's
-  **Add script → From the library**, and are updated here when the app's are.
+  **Add script → From the library**, and are updated here when the app's are. Those named `tty-…`,
+  such as `tty-matrix`, draw a full screen as Kolahal's own screens do (Kolahal 0.5.17).
 - `index.json`, published at https://mtwabpin.github.io/kolahal-scripts/index.json, lists every
   script with its checksum. Kolahal reads it, and checks each file against it before installing.
 

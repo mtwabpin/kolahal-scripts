@@ -13,7 +13,8 @@
    ```
 
    Then, as it needs them: `@command` and `@usage`, `@every` or `@at` and `@notify`, `@on`, `@uses`,
-   `@secret`, `@option`, `@tags`, and `@requires` with the oldest Kolahal it works with.
+   `@secret`, `@option`, `@widget`, `@gives`, `@tags`, and `@requires` with the oldest Kolahal it
+   works with.
    [Describing a script](https://mtwabpin.github.io/kolahal/scripting/overview/#describing-a-script)
    explains each one. [scripts/moon](scripts/moon/moon.lua) is a small example.
 4. Open a pull request against `main`. The check runs on it, and someone reads the code before it is
@@ -34,12 +35,16 @@ You can run it yourself with `node tools/check.mjs` (and `luac` for Lua syntax).
 own, with the rules of its Kolahal version. `node tools/site.mjs --out <folder> --local` builds the
 whole site, a folder for each version branch, as GitHub publishes it.
 
-- One script per folder, named after the folder.
+- One script per folder, named after the folder, and not a Kolahal command's name (Kolahal doesn't
+  install such a script).
+- Only `@` lines that Kolahal knows: a typo such as `@evrey` fails the check.
 - `@title`, `@desc`, `@author` and `@version` lines.
 - An `@uses` line for everything that needs one: `apps` for `apps.list()`, `clipboard` for
   `clipboard.get()` and `.set()`, `notifications` for `notifications.recent()` and
   `@on notification`, `commands` for `launcher.run()`, `dnd` for `device.dnd()` and `.setDnd()`,
-  and `work` for `device.work()` and `.setWork()`.
+  `work` for `device.work()` and `.setWork()`, `usage` for `usage.*`, `screen` for `tty.screen()`
+  and `effects` for `shader.play()`, as
+  [What a script may use](https://mtwabpin.github.io/kolahal/scripting/overview/#what-a-script-may-use) lists them.
 - Known `@on` events, and `@every` / `@at` values Kolahal understands.
 - For an API key: `@secret NAME site description` naming the site it is sent to (not `*`), an
   `@secret` line for each name `secrets.get` reads, and `@requires 0.4.0` or newer.
@@ -48,6 +53,11 @@ whole site, a folder for each version branch, as GitHub publishes it.
 - For a setting (a city, a feed's address, how many lines): `@option name default description`,
   an `@option` line for each name the code reads as `options.name`, and `@requires 0.4.7` or newer.
   [Options](https://mtwabpin.github.io/kolahal/scripting/overview/#options) explains them.
+- For a full screen of its own (`@uses screen`): no `@every`, `@at`, `@on` or `@widget`, as it runs
+  only when you start it.
+- For values that shaders follow: a `@gives` line naming each value that `shader.give` gives, at most 8.
+- `@requires 0.5.17` or newer for `@uses screen`, `@uses effects` or `@gives`.
+- A `@widget` line names a kind of widget and a size that Kolahal has, such as `@widget stat 2x1`.
 - No syntax errors, at most 64 KB, and no line longer than 300 characters.
 
 ## What a reviewer looks for
