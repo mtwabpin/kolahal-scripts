@@ -29,6 +29,30 @@ The [README](README.md#branches) says what each branch is.
 To update a script, change it and raise its `@version`: Kolahal offers the update to everyone who
 has it and hasn't edited their copy.
 
+## Sharing a shader
+
+Add it as `shaders/<name>/<name>.agsl`, with the header lines that the
+[README](README.md#shaders) shows, and open a pull request. Shaders need Kolahal 0.5.17: until it is
+released, open it against the `0.5.17` branch. The name is one word: lowercase letters, digits, `-`
+and `_`, up to 40. It can't be a word of the `shader` command (`ls`, `use`, `get`…), the name of
+a shader that comes with Kolahal, or start with `template-`. The check asks for:
+
+- One file per folder, named after the folder, of at most 64 KB, with no line longer than 300 characters.
+- `@name`, `@description`, `@author`, `@version`, `@license` and `@requires` (0.5.17 or newer) lines.
+  `@license` is MIT, like everything here.
+- `uniform shader content;` and no other input, and only
+  [uniforms that Kolahal sets](https://mtwabpin.github.io/kolahal/scripting/shaders/#uniforms), with their
+  types, or a [parameter](https://mtwabpin.github.io/kolahal/scripting/shaders/#parameters)'s `uniform float`.
+- `@param` lines that Kolahal can read, at most 8, none named after a uniform that Kolahal sets.
+- `@animated` (or `@once`) for one that reads `time`.
+
+It only warns about an `@fps` or `@settles` line that Kolahal can't read, or an `@follow` that names no
+value Kolahal has: Kolahal leaves such a line out, and the shader works without it.
+
+It doesn't compile the shader: try it on a phone first (`shader check <name>`), on a dark and a light theme,
+and say in the pull request which phone it ran on. A reviewer checks that text stays easy to read, that
+nothing moves far from where it is tapped, and that it looks at a few pixels around each one, not hundreds.
+
 ## What the check looks for
 
 You can run it yourself with `node tools/check.mjs` (and `luac` for Lua syntax). Each branch has its
