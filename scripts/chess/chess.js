@@ -1,7 +1,7 @@
 // @title Live chess
 // @desc Live chess from Lichess broadcasts: the event option's game as its status line, to pin at the top of home; chess games lists the rounds
 // @author Kolahal
-// @version 1.3
+// @version 1.4
 // @command
 // @usage [now|games|board|live|<player>]
 // @widget versus 4x1
@@ -243,7 +243,7 @@ function card(g, game) {
     tap: TAP,
     staleAfter: on ? 60 : 900,
   };
-  if (s) d.line = state(g);
+  if (s) d.caption = state(g);
   if (on) {
     d.turn = toMove(g) + 1;
     d.moving = true;

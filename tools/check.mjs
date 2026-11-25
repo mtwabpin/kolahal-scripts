@@ -97,7 +97,7 @@ const WIDGET_SIZES_OF = {
   sky: ['2x1', '2x2'],
 };
 // Widgets of Kolahal 0.5.17: the versus and sky kinds, a progress widget's gauge, rings and stages, and a
-// stat's scene, each found in the code with its kind or field. A stat's `points` and a bar's `unit` and
+// stat's scene, each found in the code with its kind or field. A stat's `points` and a ring's `unit` and
 // `moving` are 0.5.17's too, but their names are also older fields' (a chart's points), so they aren't looked for.
 const WIDGETS_SINCE = '0.5.17';
 const NOT_DECLARED = '(?<!\\b(?:local|const|let|var)\\s+)(?<![.\\w$])["\']?';
