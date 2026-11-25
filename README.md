@@ -23,24 +23,56 @@ off, then or later.
   lists them all.
 - Scripts named `template-…` are starting points: short, commented scripts that show one way of
   working each: a command you type, a timer, an event on the phone, an API key, a fetch, every kind
-  of log line, and two widgets. Each comes in Lua and in JavaScript (`-js`).
-- Kolahal's own library is here too: the 48 ready-made scripts that come with the app, such as
+  of log line, two widgets, and a full screen of its own (`template-screen`, Kolahal 0.5.17). Each
+  comes in Lua and in JavaScript (`-js`).
+- Kolahal's own library is here too: the 57 ready-made scripts that come with the app, such as
   `weather`, `hn`, `countdown` and `habit`, by Kolahal. They are the same files as in the app's
-  **Add script → From the library**, and are updated here when the app's are.
+  **Add script → From the library**, and are updated here when the app's are. Those named `tty-…`,
+  such as `tty-matrix`, draw a full screen as Kolahal's own screens do (Kolahal 0.5.17).
+- `shaders/<name>/<name>.agsl`: one folder per shader, an effect that Kolahal draws over home. See
+  [Shaders](#shaders).
 - `index.json`, published at https://mtwabpin.github.io/kolahal-scripts/index.json, lists every
-  script with its checksum. Kolahal reads it, and checks each file against it before installing.
+  script and shader with its checksum. Kolahal reads it, and checks each file against it before
+  installing.
+
+## Shaders
+
+A shader is a small AGSL program that the phone's graphics chip runs over Kolahal's home screen: an old
+monitor's scanlines, a glow, rain behind the text. They need Android 13 and Kolahal 0.5.17 or newer.
+
+- **In Kolahal**: Settings → Shaders → Add shader → Get more shaders lists those here, with their code,
+  and installs them. `shader get <name>` does the same. Installing one doesn't turn it on.
+- **Or by hand**: download the `.agsl` file, then Settings → Shaders → Add shader → Import a file.
+
+Each one describes itself in its first lines:
+
+```glsl
+// @name Tint
+// @description A little of the accent color over everything
+// @author your GitHub name
+// @version 1.0
+// @license MIT
+// @requires 0.5.17
+// @tags color, subtle
+```
+
+Add `// @animated` to one that moves, and a `// @param` line for each thing people can change.
+[Writing a shader](https://mtwabpin.github.io/kolahal/scripting/shaders/#writing-one) explains the rest.
+A shader has one input, `content`: no images, no files and no network. Kolahal turns one off that is
+too slow for the phone.
 
 ## Branches
 
-- `main` holds the scripts for the newest Kolahal that is released. Its list is the one above, which
-  Kolahal reads when there is no list for its own version. Kolahal 0.5.16 and older read only this one.
-- A branch named after a Kolahal version, such as `0.5.17`, holds the scripts for that version. Its
-  list is published as `https://mtwabpin.github.io/kolahal-scripts/0.5.17/index.json`, with its
-  scripts beside it, and that Kolahal reads it first.
-- Scripts for the next Kolahal go on its branch at once, so they are published before it is released.
-  What is merged into `main` meanwhile is merged into that branch too, so its list has it as well.
-  The branch is merged into `main` when that Kolahal is released, and stays, for fixes to the scripts
-  of that version.
+- `main` holds the scripts and shaders for the newest Kolahal that is released. Its list is the
+  one above, which Kolahal reads when there is no list for its own version. Kolahal 0.5.16 and older
+  read only this one.
+- A branch named after a Kolahal version, such as `0.5.17`, holds them for that version. Its list is
+  published as `https://mtwabpin.github.io/kolahal-scripts/0.5.17/index.json`, with its files
+  beside it, and that Kolahal reads it first.
+- Scripts and shaders for the next Kolahal go on its branch at once, so they are published before
+  it is released. What is merged into `main` meanwhile is merged into that branch too, so its list
+  has it as well. The branch is merged into `main` when that Kolahal is released, and stays, for
+  fixes to the scripts of that version.
 
 ## Keeping your own scripts
 
@@ -60,4 +92,4 @@ and the [API](https://mtwabpin.github.io/kolahal/scripting/api/).
 
 ## License
 
-Every script here is shared under the [MIT license](LICENSE).
+Every script and shader here is shared under the [MIT license](LICENSE).
