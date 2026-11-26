@@ -69,7 +69,8 @@ whole site, a folder for each version branch, as GitHub publishes it.
   `work` for `device.work()` and `.setWork()`, `usage` for `usage.*`, `screen` for `tty.screen()`
   and `effects` for `shader.play()`, as
   [What a script may use](https://mtwabpin.github.io/kolahal/scripting/overview/#what-a-script-may-use) lists them.
-- Known `@on` events, and `@every` / `@at` values Kolahal understands.
+- Known `@on` events, and `@every` / `@at` values Kolahal understands. `@on notification` may name
+  apps by package, as in `@on notification com.example.chat`, and then needs `@requires 0.5.18` or newer.
 - For an API key: `@secret NAME site description` naming the site it is sent to (not `*`), an
   `@secret` line for each name `secrets.get` reads, and `@requires 0.4.0` or newer.
 - `@requires 0.4.1` or newer for a script that calls `fmt`, `md` or `logs`, and `@requires 0.4.4`

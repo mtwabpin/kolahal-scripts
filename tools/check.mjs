@@ -19,6 +19,10 @@ const EVENTS = ['unlock', 'charger', 'unplug', 'wifi', 'offline', 'notification'
 // As Kolahal's ScriptCheck: every `@` line a script's header may have. Any other is a typo (`@evrey`).
 const DIRECTIVES = ['command', 'desc', 'usage', 'on', 'uses', 'secret', 'option', 'title', 'author', 'version', 'tags', 'every', 'at', 'notify', 'requires', 'widget', 'gives'];
 const NAME = /^[a-z0-9_-]{1,40}$/;
+// As Kolahal 0.5.18's ScriptMeta.PACKAGE: an app's package name after `@on notification`.
+const PACKAGE = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/;
+// `@on notification com.example.chat`: an older Kolahal would run the script for every app's notifications.
+const NOTIFY_APPS_SINCE = '0.5.18';
 // As Kolahal 0.5.17's CommandCatalog.RESERVED_NAMES: the built-in commands and their other names. Kolahal
 // doesn't install a script of one of these names. Each version branch has the list of its Kolahal.
 const RESERVED = [
@@ -118,6 +122,40 @@ const allLines = (code, name) =>
     .flatMap((m) => m[2].split(/[,\s]+/)).map((s) => s.trim().toLowerCase()).filter(Boolean);
 const has = (code, name) => new RegExp(`^\\s*(--|//)\\s*@${name}\\b`, 'm').test(code);
 
+/**
+ * As Kolahal's ScriptMeta.readOn, over every `@on` line: commas and spaces separate events, and the words
+ * after `notification`, up to the next comma or event, are the package names of the apps it is for.
+ * Returns the events, whether any package name was given, and the problems.
+ */
+function readOn(code) {
+  const events = [];
+  const problems = [];
+  let named = false;
+  const list = EVENTS.join(', ');
+  for (const m of code.matchAll(/^\s*(--|\/\/)\s*@on\b(.*)$/gm)) {
+    for (const part of m[2].split(',')) {
+      let apps = false;
+      for (const word of part.split(/\s+/).filter(Boolean)) {
+        const name = word.toLowerCase();
+        if (EVENTS.includes(name)) {
+          apps = name === 'notification';
+          events.push(name);
+        } else if (apps && word.includes('.')) {
+          if (PACKAGE.test(word)) named = true;
+          else problems.push(`@on notification ${word}: not a package name (letters, digits, _ and dots, such as com.example.chat)`);
+        } else if (apps) {
+          problems.push(`@on ${word}: not an event or a package name (${list})`);
+        } else if (PACKAGE.test(word)) {
+          problems.push(`@on ${word}: only notification takes package names, as in @on notification ${word}`);
+        } else {
+          problems.push(`@on ${word}: not an event (${list})`);
+        }
+      }
+    }
+  }
+  return { events, named, problems };
+}
+
 /** True when version a is older than b ("0.3.1" < "0.4.0"). */
 const older = (a, b) => {
   const x = a.split('.').map(Number);
@@ -181,9 +219,12 @@ function check(dir) {
   const requires = directive(code, 'requires');
   if (requires && !VERSION.test(requires)) problems.push(`@requires ${requires}: a Kolahal version like 0.4.0`);
   const uses = allLines(code, 'uses');
-  const on = allLines(code, 'on');
+  const { events: on, named: onApps, problems: onProblems } = readOn(code);
   for (const u of uses) if (!USES.includes(u)) problems.push(`@uses ${u}: not something a script can ask for (${USES.join(', ')})`);
-  for (const e of on) if (!EVENTS.includes(e)) problems.push(`@on ${e}: not an event (${EVENTS.join(', ')})`);
+  problems.push(...onProblems);
+  if (onApps && !(requires && VERSION.test(requires) && !older(requires, NOTIFY_APPS_SINCE))) {
+    problems.push(`@on notification names apps, so it needs "@requires ${NOTIFY_APPS_SINCE}" or newer`);
+  }
   for (const [call, what, shown] of NEEDS) if (call.test(body) && !uses.includes(what)) problems.push(`calls ${shown} but has no "@uses ${what}"`);
   if (on.includes('notification') && !uses.includes('notifications')) problems.push('@on notification needs "@uses notifications"');
   // A full-screen screen of its own: a command, and nothing else.
