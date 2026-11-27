@@ -114,6 +114,19 @@ const WIDGETS_NEW = [
   [new RegExp(`${NOT_DECLARED}stages["']?\\s*[:=](?!=)`), 'a progress widget\'s stages'],
   [new RegExp(`${NOT_DECLARED}scene["']?\\s*[:=](?!=)`), 'a stat\'s scene'],
 ];
+// Widgets of Kolahal 0.5.22: a footer on every kind, a badge on every kind but buttons and toggles (a versus
+// card had one before), a stat's target, a progress widget's details and a versus side's detail, each found in
+// the code with its field, in a script whose @widget line names a kind that takes it, as their names are also
+// common words (counter's target) or older fields' (a list row's detail). A button's and a toggle's `value` are
+// 0.5.22's too, but the name is also older fields' (a stat's value), so they aren't looked for.
+const WIDGET_FIELDS_SINCE = '0.5.22';
+const WIDGET_FIELDS_NEW = [
+  [new RegExp(`${NOT_DECLARED}footer["']?\\s*[:=](?!=)`), 'a footer', WIDGET_KINDS],
+  [new RegExp(`${NOT_DECLARED}badge["']?\\s*[:=](?!=)`), 'a badge', WIDGET_KINDS.filter((k) => !['buttons', 'toggles', 'versus'].includes(k))],
+  [new RegExp(`${NOT_DECLARED}target["']?\\s*[:=](?!=)`), 'a stat\'s target', ['stat']],
+  [new RegExp(`${NOT_DECLARED}details["']?\\s*[:=](?!=)`), 'a progress widget\'s details', ['progress']],
+  [new RegExp(`${NOT_DECLARED}detail["']?\\s*[:=](?!=)`), 'a versus side\'s detail', ['versus']],
+];
 
 const directive = (code, name) => {
   const m = code.match(new RegExp(`^\\s*(--|//)\\s*@${name}\\b[ \\t]*(.*)$`, 'm'));
@@ -261,6 +274,11 @@ function check(dir) {
     ];
     if (found.length && !(requires && VERSION.test(requires) && !older(requires, WIDGETS_SINCE))) {
       problems.push(`uses ${[...new Set(found)].join(', ')}, so it needs "@requires ${WIDGETS_SINCE}" or newer`);
+    }
+    // A field of 0.5.22's widgets: an older Kolahal stops widget.show with an error.
+    const added = WIDGET_FIELDS_NEW.filter(([re, , kinds]) => kinds.includes(k) && re.test(body)).map(([, what]) => what);
+    if (added.length && !(requires && VERSION.test(requires) && !older(requires, WIDGET_FIELDS_SINCE))) {
+      problems.push(`uses ${added.join(', ')}, so it needs "@requires ${WIDGET_FIELDS_SINCE}" or newer`);
     }
   }
   // API keys: named with @secret, sent only to a site it names, read with secrets.get.

@@ -88,6 +88,11 @@ whole site, a folder for each version branch, as GitHub publishes it.
 - `@requires 0.5.17` or newer for a `versus` or `sky` widget, a `progress` widget's `gauge`, `rings`
   or `stages`, and a `stat`'s `scene`. A `stat`'s `points` needs it too, though the check can't tell
   them from a chart's.
+- `@requires 0.5.22` or newer for a `footer` on any widget, a `badge` on any but `buttons`, `toggles`
+  and `versus` (which had one before), a `stat`'s `target`, a `progress` widget's `details` and a
+  `versus` side's `detail`. The check looks for each in a script whose `@widget` line names a kind
+  that takes it. A button's or toggle's `value` needs it too, though the check can't tell it from a
+  stat's.
 - No syntax errors, at most 64 KB, and no line longer than 300 characters.
 
 ## What a reviewer looks for
