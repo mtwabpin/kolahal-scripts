@@ -75,6 +75,7 @@ whole site, a folder for each version branch, as GitHub publishes it.
   `@secret` line for each name `secrets.get` reads, and `@requires 0.4.0` or newer.
 - `@requires 0.4.1` or newer for a script that calls `fmt`, `md` or `logs`, and `@requires 0.4.4`
   or newer for one with `@uses dnd` or `@uses work`.
+- `@requires 0.5.20` or newer for a script that calls `web.open()`.
 - For a setting (a city, a feed's address, how many lines): `@option name default description`,
   an `@option` line for each name the code reads as `options.name`, and `@requires 0.4.7` or newer.
   [Options](https://mtwabpin.github.io/kolahal/scripting/overview/#options) explains them.

@@ -74,6 +74,8 @@ const OPTIONS_SINCE = '0.4.7';
 // A full-screen screen of its own (`@uses screen`, tty.screen), one-off shaders (`@uses effects`,
 // shader.play) and values for shaders (`@gives`, shader.give).
 const SCREEN_SINCE = '0.5.17';
+// web.open: an older Kolahal has no `web`, and stops the script with an error.
+const WEB_OPEN_SINCE = '0.5.20';
 // As Kolahal's ScriptMeta.isScreen and ScriptCheck.SCREEN_REFUSES: a script with a screen of its own runs
 // only when you start it, so these lines would count for nothing in it.
 const SCREEN_REFUSES = ['every', 'at', 'on', 'widget'];
@@ -299,6 +301,9 @@ function check(dir) {
   for (const name of read) if (!optionNames.includes(name)) problems.push(`reads options.${name} but has no "@option ${name} <default> <description>"`);
   if ((options.length || read.length) && !(requires && VERSION.test(requires) && !older(requires, OPTIONS_SINCE))) {
     problems.push(`has options, so it needs "@requires ${OPTIONS_SINCE}" or newer`);
+  }
+  if (/(?<![.\w])web\s*\.\s*open\b/.test(body) && !(requires && VERSION.test(requires) && !older(requires, WEB_OPEN_SINCE))) {
+    problems.push(`calls web.open(), so it needs "@requires ${WEB_OPEN_SINCE}" or newer`);
   }
   const every = directive(code, 'every');
   if (every && !interval(every)) problems.push(`@every ${every}: use 15m, 2h or 1d`);
