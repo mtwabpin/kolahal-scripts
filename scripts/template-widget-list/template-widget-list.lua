@@ -1,7 +1,7 @@
 -- @title Template: checklist widget
 -- @desc A starting point for a widget you tap: a checklist for each day, where a tap on a row ticks it
 -- @author Kolahal
--- @version 1.0
+-- @version 1.1
 -- @widget list 2x2
 -- @at 00:01
 -- @tags template, widget, checklist
@@ -13,7 +13,7 @@
 -- tick away. Each new day starts with no ticks. Nothing leaves the phone.
 -- template-widget-list-js does the same in JavaScript.
 --
--- To see the card: install the script, tap + on the widgets page, and pick "Template: checklist
+-- To see the card: install the script, run widget add, and pick "Template: checklist
 -- widget" in the Kolahal group.
 --
 -- How a tap works:
@@ -83,5 +83,5 @@ local lines = {}
 for i, thing in ipairs(things) do lines[i] = (ticked[thing] and "✓ " or "· ") .. thing end
 log("Today · " .. done .. " of " .. #things, table.concat(lines, "\n"))
 if not placed then
-  log(fmt.color("muted", "To see the card: tap + on the widgets page and pick Template: checklist widget"))
+  log(fmt.color("muted", "To see the card: run widget add and pick Template: checklist widget"))
 end
