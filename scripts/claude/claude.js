@@ -42,7 +42,7 @@ if (!key) {
 
 const body = {
   model,
-  // Kolahal waits about 20 seconds for an answer: low effort and a short answer keep within it.
+  // A request waits up to 60 seconds (timeout below): low effort and a short answer keep within it.
   max_tokens: 8000,
   system: (options.system || "").trim() || SYSTEM,
   messages: [{ role: "user", content: question }],
@@ -56,7 +56,7 @@ if (FALLBACK.includes(model)) {
 
 let r;
 try {
-  r = await http.request({ url: "https://api.anthropic.com/v1/messages", method: "POST", body, headers });
+  r = await http.request({ url: "https://api.anthropic.com/v1/messages", method: "POST", body, headers, timeout: 60 });
 } catch (e) {
   if (/time.?out/i.test(String(e.message || e))) {
     const faster = "script set claude model claude-haiku-5-5";

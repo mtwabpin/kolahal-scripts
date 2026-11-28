@@ -71,7 +71,8 @@ const body = {
 
 let r;
 try {
-  r = await http.request({ url: `${base}/api/chat`, method: "POST", body });
+  // A local model may be slow to answer: the request waits up to 60 seconds.
+  r = await http.request({ url: `${base}/api/chat`, method: "POST", body, timeout: 60 });
 } catch (e) {
   return unreachable(e);
 }

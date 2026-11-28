@@ -43,7 +43,7 @@ const body = {
     { role: "developer", content: (options.system || "").trim() || SYSTEM },
     { role: "user", content: question },
   ],
-  // Reasoning counts toward it. Kolahal waits about 20 seconds for an answer: low effort keeps within it.
+  // Reasoning counts toward it. A request waits up to 60 seconds (timeout below): low effort keeps within it.
   max_output_tokens: 8000,
   store: false,
 };
@@ -57,6 +57,7 @@ try {
     method: "POST",
     body,
     headers: { Authorization: `Bearer ${key}` },
+    timeout: 60,
   });
 } catch (e) {
   if (/time.?out/i.test(String(e.message || e))) {

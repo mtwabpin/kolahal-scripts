@@ -44,7 +44,7 @@ const body = {
     { role: "system", content: (options.system || "").trim() || SYSTEM },
     { role: "user", content: question },
   ],
-  // Kolahal waits about 20 seconds for an answer: low reasoning effort keeps within it. Models that
+  // A request waits up to 60 seconds (timeout below): low reasoning effort keeps within it. Models that
   // don't reason leave it out.
   max_tokens: 8000,
   reasoning: { effort: "low" },
@@ -57,6 +57,7 @@ try {
     method: "POST",
     body,
     headers: { Authorization: `Bearer ${key}` },
+    timeout: 60,
   });
 } catch (e) {
   if (/time.?out/i.test(String(e.message || e))) {

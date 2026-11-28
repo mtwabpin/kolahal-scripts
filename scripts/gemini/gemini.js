@@ -41,7 +41,7 @@ if (!key) {
   return fail("No Gemini API key", ["Get one at aistudio.google.com → Get API key", `Then: ${set}`], set);
 }
 
-// Kolahal waits about 20 seconds for an answer: a low thinking level keeps within it. Gemini 3 and
+// A request waits up to 60 seconds (timeout below): a low thinking level keeps within it. Gemini 3 and
 // later take one; older models refuse it.
 const config = { maxOutputTokens: 8000 };
 if (!/^gemini-[12][.-]/.test(model)) config.thinkingConfig = { thinkingLevel: "LOW" };
@@ -58,6 +58,7 @@ try {
     method: "POST",
     body,
     headers: { "x-goog-api-key": key },
+    timeout: 60,
   });
 } catch (e) {
   if (/time.?out/i.test(String(e.message || e))) {
