@@ -93,6 +93,9 @@ whole site, a folder for each version branch, as GitHub publishes it.
   `versus` side's `detail`. The check looks for each in a script whose `@widget` line names a kind
   that takes it. A button's or toggle's `value` needs it too, though the check can't tell it from a
   stat's.
+- `@requires 0.5.23` or newer for a `versus` side's `clock` or `lines`. The check looks for each in a
+  script whose `@widget` line names `versus`. A side's own `score` needs it too, though the check
+  can't tell it from the card's.
 - No syntax errors, at most 64 KB, and no line longer than 300 characters.
 
 ## What a reviewer looks for

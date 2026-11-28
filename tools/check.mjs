@@ -127,6 +127,14 @@ const WIDGET_FIELDS_NEW = [
   [new RegExp(`${NOT_DECLARED}details["']?\\s*[:=](?!=)`), 'a progress widget\'s details', ['progress']],
   [new RegExp(`${NOT_DECLARED}detail["']?\\s*[:=](?!=)`), 'a versus side\'s detail', ['versus']],
 ];
+// Widgets of Kolahal 0.5.23: a versus side's clock and lines, each found in the code with its field, in a script
+// whose @widget line names versus. A side's own `score` is 0.5.23's too, but the name is also the card's score's,
+// so it isn't looked for.
+const VERSUS_FIELDS_SINCE = '0.5.23';
+const VERSUS_FIELDS_NEW = [
+  [new RegExp(`${NOT_DECLARED}clock["']?\\s*[:=](?!=)`), 'a versus side\'s clock', ['versus']],
+  [new RegExp(`${NOT_DECLARED}lines["']?\\s*[:=](?!=)`), 'a versus side\'s lines', ['versus']],
+];
 
 const directive = (code, name) => {
   const m = code.match(new RegExp(`^\\s*(--|//)\\s*@${name}\\b[ \\t]*(.*)$`, 'm'));
@@ -279,6 +287,11 @@ function check(dir) {
     const added = WIDGET_FIELDS_NEW.filter(([re, , kinds]) => kinds.includes(k) && re.test(body)).map(([, what]) => what);
     if (added.length && !(requires && VERSION.test(requires) && !older(requires, WIDGET_FIELDS_SINCE))) {
       problems.push(`uses ${added.join(', ')}, so it needs "@requires ${WIDGET_FIELDS_SINCE}" or newer`);
+    }
+    // A field of 0.5.23's versus card: an older Kolahal stops widget.show with an error.
+    const versus = VERSUS_FIELDS_NEW.filter(([re, , kinds]) => kinds.includes(k) && re.test(body)).map(([, what]) => what);
+    if (versus.length && !(requires && VERSION.test(requires) && !older(requires, VERSUS_FIELDS_SINCE))) {
+      problems.push(`uses ${versus.join(', ')}, so it needs "@requires ${VERSUS_FIELDS_SINCE}" or newer`);
     }
   }
   // API keys: named with @secret, sent only to a site it names, read with secrets.get.
