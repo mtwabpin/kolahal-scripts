@@ -25,6 +25,9 @@ off, then or later.
   working each: a command you type, a timer, an event on the phone, an API key, a fetch, every kind
   of log line, two widgets, and a full screen of its own (`template-screen`, Kolahal 0.5.17). Each
   comes in Lua and in JavaScript (`-js`).
+- `claude`, `gpt`, `gemini` and `openrouter` ask an AI model a question, each with your own API key
+  from that company (`openrouter`: one key for many companies' models), and `ollama` asks a model
+  on your own Ollama server. Each is its own command: `claude why is the sky blue` (Kolahal 0.5.23).
 - Kolahal's own library is here too: the 57 ready-made scripts that come with the app, such as
   `weather`, `hn`, `countdown` and `habit`, by Kolahal. They are the same files as in the app's
   **Add script → From the library**, and are updated here when the app's are. Those named `tty-…`,
