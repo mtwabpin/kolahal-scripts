@@ -1,13 +1,13 @@
 // @title Live chess
 // @desc Live chess from Lichess broadcasts: the event option's game as its status line, to pin at the top of home; chess games lists the rounds
 // @author Kolahal
-// @version 1.4
+// @version 2.0
 // @command
 // @usage [now|games|board|live|<player>]
 // @widget versus 4x1
 // @every 15m
 // @tags sport, chess, live
-// @requires 0.5.17
+// @requires 0.5.23
 // @option event top The broadcast it follows: top, the highest-ranked one on now, or words from its name, such as "world championship"
 // @option player any The player whose game it follows, such as Gukesh; any: the first board on
 // @option refresh 60 Seconds between updates while home shows the game (30 at the fastest)
@@ -27,10 +27,11 @@
 // `chess games` lists the event's rounds with their results or start times, and `chess live` lists
 // every broadcast on now.
 //
-// Its widget, once you placed it on the widgets page, is the game: the two players with their
-// initials, white first, and the last move large between them, or in a match the match score with
-// the last move under it. While the game is on, both clocks are the bar between the players, the
-// running one moving, with a dot by the player to move. While the page shows it, it is fetched again
+// Its widget, once you placed it on the widgets page, is the game: a row for each player, white
+// first, with the initials, and the last move under the rows. While the game is on, each row has the
+// player's clock, and a dot is by the player to move, whose clock counts down on the phone between
+// updates. In a match each row also has the player's match score. Once the game ends, each row has
+// its result (1, 0 or ½), or in a match the match score. While the page shows it, it is fetched again
 // every refresh seconds. A tap shows the game in the log.
 
 const API = "https://lichess.org";
@@ -183,14 +184,18 @@ function clock(g, i) {
   return h ? `${h}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}` : `${Math.floor(s / 60)}:${pad(s % 60)}`;
 }
 
-// The match score, white's first ("1½–½"), with the game's result if the kept score doesn't count
-// it yet; null outside a match.
+// The match score of each player, white's first (["1½", "½"]), with the game's result if the kept
+// score doesn't count it yet; null outside a match. score joins them ("1½–½").
 const POINTS = { "1-0": [1, 0], "0-1": [0, 1], "½-½": [0.5, 0.5] };
 const half = (n) => (n >= 1 ? String(Math.floor(n)) : n ? "" : "0") + (n % 1 ? "½" : "");
-function score(g, game) {
+function scores(g, game) {
   if (!game.score) return null;
   const add = (!game.counted && POINTS[g.status]) || [0, 0];
-  return [0, 1].map((i) => half((game.score[side(g, i).name] || 0) + add[i])).join("–");
+  return [0, 1].map((i) => half((game.score[side(g, i).name] || 0) + add[i]));
+}
+function score(g, game) {
+  const s = scores(g, game);
+  return s && s.join("–");
 }
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -220,30 +225,37 @@ function marks(g) {
   return m[0] !== m[1] ? m : [0, 1].map((i) => short(side(g, i)).slice(0, 2));
 }
 
-// Its widget for a game: the players, white first, each with its initials; between them the last move
-// large (the result once it ends), or in a match the match score, with the last move as the line
-// under it. LIVE or RESULT at the top. While it's on: both clocks as the bar between the players (the
-// time each has left), the running one moving, and a dot by the player to move.
+// Its widget for a game: a row for each player, white first, with the initials. LIVE or RESULT at
+// the top, and the last move as the line under the rows (in a match, the game's result once it ends).
+// - While it's on: each player's clock in seconds, and a dot by the player to move, whose clock the
+//   card counts down between updates. In a match, each player's match score at the end of the row,
+//   the clock before it.
+// - Once it ends: in a match each player's match score; else the game's result for each (1, 0, ½).
+// - Without clocks from Lichess and outside a match, the last move is the score, drawn whole.
 function card(g, game) {
   const on = live(g);
-  const s = score(g, game);
+  const s = scores(g, game);
   const mark = marks(g);
   const left = [0, 1].map((i) => secondsLeft(g, i));
   const clocks = on && left.every((n) => n != null);
+  const result = !on && POINTS[g.status];
+  const own = s || (result && result.map(half));
   const d = {
     kind: "versus",
     icon: "♞",
-    score: s || state(g),
     sides: [0, 1].map((i) => ({
       name: short(side(g, i)),
       ...(mark[i] ? { mark: mark[i] } : {}),
-      ...(clocks ? { value: left[i], text: clock(g, i) } : {}),
+      ...(own ? { score: own[i] } : {}),
+      // The card takes a clock under 100 hours.
+      ...(clocks ? { clock: Math.min(left[i], 359999) } : {}),
     })),
     badge: on ? "LIVE" : "RESULT",
     tap: TAP,
     staleAfter: on ? 60 : 900,
   };
-  if (s) d.caption = state(g);
+  if (own || clocks) d.caption = s && !on ? state(g) : lastMove(g);
+  else d.score = state(g);
   if (on) {
     d.turn = toMove(g) + 1;
     d.moving = true;
