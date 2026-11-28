@@ -92,6 +92,8 @@ Every pull request is checked automatically, then read by a person before it is 
 
 To write one, start with the [scripting guide](https://mtwabpin.github.io/kolahal/scripting/overview/)
 and the [API](https://mtwabpin.github.io/kolahal/scripting/api/).
+The [Script check](https://mtwabpin.github.io/kolahal/tools/script-check/) checks a script in your browser,
+by this repository's rules, before you open the pull request.
 
 ## License
 

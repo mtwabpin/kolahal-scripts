@@ -46,7 +46,7 @@ a shader that comes with Kolahal, or start with `template-`. The check asks for:
 - `@param` lines that Kolahal can read, at most 8, none named after a uniform that Kolahal sets.
 - `@animated` (or `@once`) for one that reads `time`.
 
-It only warns about an `@fps` or `@settles` line that Kolahal can't read, or an `@follow` that names no
+It only warns about an `@fps`, `@settles` or `@still` line that Kolahal can't read, or an `@follow` that names no
 value Kolahal has: Kolahal leaves such a line out, and the shader works without it.
 
 It doesn't compile the shader: try it on a phone first (`shader check <name>`), on a dark and a light theme,
@@ -55,8 +55,10 @@ nothing moves far from where it is tapped, and that it looks at a few pixels aro
 
 ## What the check looks for
 
-You can run it yourself with `node tools/check.mjs` (and `luac` for Lua syntax). Each branch has its
-own, with the rules of its Kolahal version. `node tools/site.mjs --out <folder> --local` builds the
+You can run it yourself with `node tools/check.mjs` (and `luac` for Lua syntax), or paste the script into
+the website's [Script check](https://mtwabpin.github.io/kolahal/tools/script-check/), which runs the same rules
+in your browser. Each branch has its own, with the rules of its Kolahal version, in `tools/rules.mjs`;
+`tools/examples.mjs` has sample scripts and what the check says of each (`node --test tools/rules.test.mjs`). `node tools/site.mjs --out <folder> --local` builds the
 whole site, a folder for each version branch, as GitHub publishes it.
 
 - One script per folder, named after the folder, and not a Kolahal command's name (Kolahal doesn't
@@ -93,6 +95,8 @@ whole site, a folder for each version branch, as GitHub publishes it.
   `versus` side's `detail`. The check looks for each in a script whose `@widget` line names a kind
   that takes it. A button's or toggle's `value` needs it too, though the check can't tell it from a
   stat's.
+- `@requires 0.5.23` or newer for an `http.request` with a `timeout`: an older Kolahal stops a request
+  after 30 seconds all the same. Kolahal's editor says this one too.
 - `@requires 0.5.23` or newer for a `versus` side's `clock` or `lines`. The check looks for each in a
   script whose `@widget` line names `versus`. A side's own `score` needs it too, though the check
   can't tell it from the card's.

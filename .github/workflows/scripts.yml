@@ -42,6 +42,10 @@ jobs:
       - name: Check every script
         run: node tools/check.mjs
 
+      # The rules' sample scripts (tools/examples.mjs) get what Kolahal's editor says of them.
+      - name: Check the rules against their examples
+        run: node --test tools/rules.test.mjs
+
   # A version branch that passed: publish it, by running this workflow on main. A run started with
   # GITHUB_TOKEN starts no other run, except a workflow_dispatch, which needs actions: write.
   publish:
